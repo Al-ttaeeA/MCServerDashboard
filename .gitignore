@@ -23,7 +23,7 @@ id_ed25519*
 # Real server logs contain player IPs and chat. This repo is public,
 # so they must never be committed. Tests use synthetic fixtures instead.
 samples/
-logs/
+/logs/
 *.log
 *.log.gz
 
