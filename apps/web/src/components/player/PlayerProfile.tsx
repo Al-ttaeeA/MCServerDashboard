@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { isoDateInZone, statById, type DeathCategory, type PlayerDetailResponse } from "@smp/core";
+import { isoDateInZone, statById, statNoun, type DeathCategory, type PlayerDetailResponse } from "@smp/core";
 import { useApi } from "@/lib/api";
 import { useNow } from "@/lib/use-now";
 import {
@@ -118,7 +118,7 @@ function Profile({ data }: { data: PlayerDetailResponse }) {
                     <li key={h.statId} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-bg/60 px-2.5 py-1 text-xs">
                       <Icon name={def.icon} className="size-3.5 text-ink-3" />
                       <span className="font-semibold">{formatStatValue(h.value, def.unit)}</span>
-                      <span className="text-ink-2">{def.noun}</span>
+                      <span className="text-ink-2">{statNoun(def, h.value)}</span>
                     </li>
                   );
                 })}

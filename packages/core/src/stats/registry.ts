@@ -42,6 +42,11 @@ export const STAT_DEFINITIONS: readonly StatDefinition[] = [
 
 export const statById = (id: string) => STAT_DEFINITIONS.find((d) => d.id === id);
 
+/** "1 death" vs "2 deaths" for count-style nouns. */
+export function statNoun(def: StatDefinition, value: number): string {
+  return value === 1 && def.unit === "count" && def.noun.endsWith("s") ? def.noun.slice(0, -1) : def.noun;
+}
+
 export interface Highlight {
   statId: string;
   value: number;

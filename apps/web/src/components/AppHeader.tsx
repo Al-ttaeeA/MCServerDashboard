@@ -31,11 +31,11 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-line-soft bg-bg/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-6 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
           <LogoMark />
           <span className="text-sm font-semibold tracking-[0.14em]">
-            SMP<span className="text-ink-3"> ANALYTICS</span>
+            SMP<span className="hidden text-ink-3 sm:inline"> ANALYTICS</span>
           </span>
         </Link>
         <nav aria-label="Main" className="flex items-center gap-1">
@@ -55,7 +55,7 @@ export function AppHeader() {
             );
           })}
         </nav>
-        <div className="ml-auto flex items-center gap-4 text-xs text-ink-3">
+        <div className="ml-auto flex items-center gap-4 whitespace-nowrap text-xs text-ink-3">
           {online > 0 ? (
             <span className="hidden items-center gap-1.5 text-ink-2 sm:inline-flex">
               <span className="live-dot size-2 rounded-full bg-good" aria-hidden />

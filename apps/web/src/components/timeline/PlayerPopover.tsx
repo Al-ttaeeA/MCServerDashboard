@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { statById, type PlayerSummaryDto } from "@smp/core";
+import { statById, statNoun, type PlayerSummaryDto } from "@smp/core";
 import { formatDuration, formatRelative, formatStatValue } from "@/lib/format";
 import { placePopover } from "@/lib/popover";
 import { Icon } from "@/components/ui/Icon";
@@ -84,7 +84,7 @@ export function PlayerPopover({
                   <Icon name={def.icon} className="size-3.5" />
                 </span>
                 <span className="font-semibold">{formatStatValue(h.value, def.unit)}</span>
-                <span className="text-ink-2">{def.noun}</span>
+                <span className="text-ink-2">{statNoun(def, h.value)}</span>
               </li>
             );
           })}
