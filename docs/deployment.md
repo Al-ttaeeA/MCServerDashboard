@@ -167,6 +167,27 @@ warm and caches identical queries.
    - Want a nicer name? Rename `"name"` in `wrangler.jsonc`.
    - Already have a domain on Cloudflare? Add a custom domain to the Worker in the dashboard.
 
+### Reliable 30-minute syncs (Cloudflare → GitHub)
+
+GitHub's own `schedule:` trigger is best-effort and often skips runs, so the
+Worker starts the sync instead. A Cloudflare **Cron Trigger** (free: 5 per
+account) fires every 30 minutes and calls GitHub's `workflow_dispatch` API.
+GitHub's schedule stays as an hourly backup.
+
+1. GitHub → your profile → **Settings → Developer settings → Personal access
+   tokens → Fine-grained tokens → Generate new token**.
+   - Repository access: **Only select repositories** → this repo.
+   - Permissions → Repository permissions → **Actions: Read and write**.
+   - Expiration: up to a year. Set a reminder to renew it.
+2. Store it in the Worker (you'll be prompted to paste it; it's never committed):
+   ```bash
+   cd apps/api
+   npx wrangler secret put GITHUB_DISPATCH_TOKEN
+   ```
+3. Check it: Cloudflare dashboard → Workers & Pages → smp-analytics → **Logs**
+   should show "Triggered GitHub log sync" every 30 minutes, and GitHub →
+   Actions should show *workflow_dispatch* runs at :00 and :30.
+
 ## 7. Verify everything works
 
 | Check | Expected |
@@ -179,8 +200,9 @@ warm and caches identical queries.
 
 ## Free-tier limits to know about
 
-- **GitHub schedules are best-effort.** Runs often start 5–20 minutes late and can be
-  skipped when GitHub is busy. Data is "about 30 minutes fresh", not real-time.
+- **GitHub schedules are best-effort** and skip runs when GitHub is busy, which is why
+  the Worker's Cron Trigger starts the sync instead (see "Reliable 30-minute syncs").
+  The GitHub token it uses expires; renew it when GitHub emails you.
 - **Public repos: schedules are disabled after 60 days with no repository activity.**
   GitHub emails you first. The sync workflow re-enables itself monthly to reduce this,
   but if it ever stops: Actions → Sync server logs → **Enable workflow**.

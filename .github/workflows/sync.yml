@@ -1,8 +1,12 @@
 # Pulls new Minecraft log lines from WiseHosting over SFTP and updates Supabase.
 #
-# Schedule: every 30 minutes. GitHub runs schedules on a best-effort basis
-# (often 5–20 min late, occasionally skipped under load). To change the
-# cadence, edit the cron line below (GitHub can't read it from a variable).
+# Triggers:
+# - Primary: the Cloudflare Worker's Cron Trigger calls workflow_dispatch
+#   every 30 minutes (apps/api/wrangler.jsonc → "triggers"). GitHub's own
+#   schedule is best-effort and regularly skips runs, so we don't rely on it.
+# - Backup: GitHub's schedule, hourly at :17 (off-peak minutes are dropped
+#   far less often than :00/:30). If both fire close together the second
+#   run just waits (concurrency group) and finds nothing new.
 #
 # Public repo note: workflow logs are public. The sync prints only file
 # names and counts — never chat, IP addresses or raw log lines — and all
@@ -11,7 +15,7 @@ name: Sync server logs
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
     inputs:
       reparse:
@@ -72,7 +76,7 @@ jobs:
       # without repository activity. Re-enabling the workflow once a month
       # via the API keeps it alive (GitHub still emails before disabling).
       - name: Keep schedule alive
-        if: github.event_name == 'schedule' && env.CONFIGURED == 'true'
+        if: github.event_name != 'pull_request' && env.CONFIGURED == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

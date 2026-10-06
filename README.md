@@ -138,6 +138,7 @@ docs/                  deployment, parser, statistics
 | Sync: `ENOTFOUND db.<ref>.supabase.co` in Actions | You used the direct DB string. Use the **session pooler** string for `DATABASE_URL` |
 | Site loads but "API unreachable" | Hyperdrive id not set in `wrangler.jsonc`, or wrong reader password. Check `/api/meta` |
 | Parse issues appear after a Minecraft update | New death message or format. Add a template/matcher, then run sync with `--reparse` |
+| Sync only runs every few hours | GitHub's own schedule skips runs. Set up the Worker trigger (docs/deployment.md → "Reliable 30-minute syncs"), or check the `GITHUB_DISPATCH_TOKEN` hasn't expired |
 | Sync workflow stopped running | GitHub's 60-day inactivity rule. Actions → Sync server logs → Enable workflow |
 | Supabase "project paused" | No syncs for 7 days. Restore it in the dashboard, then fix the sync |
 | Times look shifted by hours | `SERVER_LOG_TIMEZONE` doesn't match the server's clock |

@@ -23,5 +23,10 @@
       "localConnectionString": "postgresql://postgres:postgres@localhost:5432/postgres"
     }
   ],
+  // Every 30 minutes: start the GitHub Actions log sync (GitHub's own cron
+  // schedule is unreliable). Requires the GITHUB_DISPATCH_TOKEN secret:
+  //   npx wrangler secret put GITHUB_DISPATCH_TOKEN
+  "triggers": { "crons": ["*/30 * * * *"] },
+  "vars": { "GITHUB_REPO": "Al-ttaeeA/MCServerDashboard" },
   "observability": { "enabled": true }
 }
