@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { LogEvent } from "../../parser/types";
 import { forEachLocalHour } from "../buckets";
 import { causeLabel, computeStats, computeStreaks, peakConcurrent, type StatsSession } from "../compute";
-import { pickHighlights } from "../registry";
 
 const utc = (s: string) => Date.parse(s);
 const sess = (playerKey: string, start: string, end: string, endReason: StatsSession["endReason"] = "leave"): StatsSession => ({
@@ -148,10 +147,5 @@ describe("computeStats", () => {
       chatMessages: 1,
       versions: [{ version: "26.3" }],
     });
-  });
-
-  it("placeholder highlights return three stats", () => {
-    expect(pickHighlights("alex", out.players).map((h) => h.statId)).toEqual(["longest_session", "deaths", "advancements"]);
-    expect(pickHighlights("nobody", out.players)).toEqual([]);
   });
 });

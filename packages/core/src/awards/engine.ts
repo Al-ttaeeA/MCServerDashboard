@@ -2,7 +2,7 @@ import { allocateAwards } from "./allocate";
 import { GRIND_COMPONENTS, META_METRICS, METRICS, type MetaFeatures } from "./catalog";
 import { AWARDS_CONFIG } from "./config";
 import { computeFeatures, type AwardsInput, type PlayerFeatures } from "./features";
-import { fmtComparison, fmtValue } from "./format";
+import { fmtComparison, fmtTimes, fmtValue } from "./format";
 import { evaluateMetric } from "./significance";
 import type { Award, AwardsConfig, Candidate, MetricDefinition, MetricDiagnostics, MetricFamily, MetricSource, MetricUnit } from "./types";
 
@@ -26,6 +26,8 @@ export interface AwardsResult {
   /** Per-metric eligibility and values, for the debug view and records. */
   diagnostics: MetricDiagnostics[];
   metrics: MetricInfo[];
+  /** The single #1 per metric and direction (ties → none), awarded or not. */
+  records: { metricId: string; direction: "high" | "low"; playerKey: string; value: number; formatted: string }[];
 }
 
 type AnyMetric = MetricDefinition<PlayerFeatures> | MetricDefinition<MetaFeatures & PlayerFeatures>;
@@ -69,8 +71,23 @@ export function computeAwards(input: AwardsInput, config: AwardsConfig = AWARDS_
     awards.set(c.playerKey, list);
   }
 
+  const records: AwardsResult["records"] = [];
+  for (const d of diagnostics) {
+    const def = defs.get(d.metricId);
+    if (!def) continue;
+    const rows = d.rows.filter((r) => r.eligible && r.value !== null) as { playerKey: string; value: number }[];
+    if (rows.length < 2) continue;
+    for (const direction of ["high", "low"] as const) {
+      if (!(direction === "high" ? def.high : def.low)) continue;
+      const sorted = [...rows].sort((a, b) => (direction === "high" ? b.value - a.value : a.value - b.value));
+      if (sorted[0]!.value === sorted[1]!.value) continue;
+      records.push({ metricId: d.metricId, direction, playerKey: sorted[0]!.playerKey, value: sorted[0]!.value, formatted: fmtValue(sorted[0]!.value, def.unit) });
+    }
+  }
+
   return {
     awards,
+    records,
     candidates: candidates.sort((a, b) => b.score - a.score),
     diagnostics,
     metrics: [...METRICS, ...META_METRICS].map((m) => ({
@@ -113,6 +130,7 @@ function toAward(c: Candidate, def: AnyMetric, f: PlayerFeatures): Award {
     name: f.name,
     value: c.value,
     formatted,
+    times: fmtTimes(c.value),
     median: c.median,
     medianFormatted: fmtValue(c.median, def.unit),
     comparison: fmtComparison(c.value, c.median, def.unit),

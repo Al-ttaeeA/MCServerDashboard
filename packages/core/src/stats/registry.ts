@@ -4,9 +4,9 @@ import type { PlayerStats } from "./types";
  * Registry of player statistics that can be compared across players.
  *
  * Each definition says how to read one number out of `PlayerStats`, how to
- * format it, and which direction is "notable". Leaderboards, the timeline
- * popover highlights and (later) the significance algorithm all work off
- * this list, so adding a stat here makes it available everywhere.
+ * format it, and which direction is "notable". Leaderboards work off
+ * this list. (Awards live in ../awards — this list powers the simple
+ * per-stat leaderboards.)
  */
 export interface StatDefinition {
   id: string;
@@ -45,37 +45,4 @@ export const statById = (id: string) => STAT_DEFINITIONS.find((d) => d.id === id
 /** "1 death" vs "2 deaths" for count-style nouns. */
 export function statNoun(def: StatDefinition, value: number): string {
   return value === 1 && def.unit === "count" && def.noun.endsWith("s") ? def.noun.slice(0, -1) : def.noun;
-}
-
-export interface Highlight {
-  statId: string;
-  value: number;
-  /** Placeholder score; the real significance algorithm will populate this. */
-  score: number;
-}
-
-/**
- * PLACEHOLDER — picks the three highlight stats shown in the timeline popover.
- *
- * TODO(significance): replace with the population-relative significance
- * algorithm (percentile / robust deviation / reliability weighting). It will
- * receive every player's stats so it can compare against the server, which
- * is why the signature already takes the whole population.
- */
-export function pickHighlights(
-  playerKey: string,
-  population: ReadonlyMap<string, PlayerStats>,
-  count = 3,
-): Highlight[] {
-  const stats = population.get(playerKey);
-  if (!stats) return [];
-  const preferred = ["longest_session", "deaths", "advancements", "active_days", "chat_messages"];
-  const out: Highlight[] = [];
-  for (const id of preferred) {
-    const value = statById(id)?.value(stats);
-    if (value === null || value === undefined) continue;
-    out.push({ statId: id, value, score: 0 });
-    if (out.length === count) break;
-  }
-  return out;
 }

@@ -28,6 +28,11 @@ export function fmtNumber(n: number, digits = 1): string {
 
 export const fmtPercent = (ratio: number) => `${Math.round(ratio * 100)}%`;
 
+export function fmtTimes(n: number): string {
+  const r = Math.round(n);
+  return r === 1 ? "once" : r === 2 ? "twice" : `${fmtInt(r)} times`;
+}
+
 /** Hours after noon → "3:15 AM". */
 export function fmtClock(hoursAfterNoon: number): string {
   const totalMin = Math.round((((hoursAfterNoon + 12) % 24) + 24) % 24 * 60) % (24 * 60);

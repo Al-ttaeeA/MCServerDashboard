@@ -70,7 +70,7 @@ describe("API", () => {
     ]);
     expect(players[0]!.color).toMatch(/^#[0-9a-f]{6}$/);
     expect(players[0]!.playtimeSeconds).toBe(3600 + 19 * 60 + 59);
-    expect(players[0]!.highlights).toHaveLength(3);
+    expect(Array.isArray(players[0]!.awards)).toBe(true); // 2 players: too few for awards
   });
 
   it("GET /api/players/:id resolves by name (case-insensitive) or UUID", async () => {

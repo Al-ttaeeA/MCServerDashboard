@@ -8,6 +8,7 @@ import { formatDateTime, formatRelative } from "@/lib/format";
 
 const NAV = [
   { href: "/", label: "Timeline" },
+  { href: "/awards/", label: "Awards" },
   { href: "/leaderboards/", label: "Leaderboards" },
 ];
 

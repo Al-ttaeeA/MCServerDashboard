@@ -48,6 +48,8 @@ export interface ExplainContext {
   value: number;
   /** `value` formatted in the metric's unit. */
   formatted: string;
+  /** Count as a frequency: "once", "twice", "5 times". */
+  times: string;
   /** Median of the other eligible players (raw units). */
   median: number;
   medianFormatted: string;

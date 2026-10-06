@@ -1,5 +1,6 @@
 import type { SessionEndReason } from "../sessions/build-sessions";
-import type { Highlight } from "../stats/registry";
+import type { Award, Candidate, MetricDiagnostics } from "../awards/types";
+import type { MetricInfo } from "../awards/engine";
 import type { PlayerStats, ServerStats } from "../stats/types";
 
 /**
@@ -25,7 +26,8 @@ export interface PlayerSummaryDto extends PlayerRefDto {
   online: boolean;
   playtimeSeconds: number;
   sessionCount: number;
-  highlights: Highlight[];
+  /** Up to three awards chosen by the significance algorithm. */
+  awards: Award[];
 }
 
 export interface PlayersResponse {
@@ -82,6 +84,28 @@ export interface LeaderboardDto {
 
 export interface LeaderboardsResponse {
   leaderboards: LeaderboardDto[];
+}
+
+/** Server-wide awards snapshot as stored by the sync (player keys, not DTOs). */
+export interface AwardsSnapshot {
+  metrics: MetricInfo[];
+  assignments: { playerKey: string; award: Award }[];
+  /** #1 per metric and direction, whether or not it was awarded. */
+  records: { metricId: string; direction: "high" | "low"; playerKey: string; value: number; formatted: string }[];
+  candidates: Candidate[];
+  diagnostics: MetricDiagnostics[];
+}
+
+export interface AwardsResponse {
+  computedAt: string | null;
+  awards: (Award & { player: PlayerRefDto })[];
+  records: { metricId: string; title: string; emoji: string; direction: "high" | "low"; player: PlayerRefDto; value: number; formatted: string }[];
+  metrics: MetricInfo[];
+  /** Only with ?debug=1. */
+  debug?: {
+    candidates: (Candidate & { player: PlayerRefDto; won: boolean })[];
+    diagnostics: (Omit<MetricDiagnostics, "rows"> & { rows: (MetricDiagnostics["rows"][number] & { player: PlayerRefDto | null })[] })[];
+  };
 }
 
 export interface MetaResponse {

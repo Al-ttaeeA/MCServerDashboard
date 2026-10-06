@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { statById, statNoun, type PlayerSummaryDto } from "@smp/core";
-import { formatDuration, formatRelative, formatStatValue } from "@/lib/format";
+import type { PlayerSummaryDto } from "@smp/core";
+import { formatDuration, formatRelative } from "@/lib/format";
 import { placePopover } from "@/lib/popover";
+import { AwardLine } from "@/components/awards/AwardBadge";
 import { Icon } from "@/components/ui/Icon";
 import { Avatar, OnlineBadge } from "@/components/ui/primitives";
 
@@ -73,21 +74,11 @@ export function PlayerPopover({
         </div>
       </div>
 
-      {player.highlights.length ? (
-        <ul className="mt-3 space-y-1.5 border-t border-line-soft pt-3">
-          {player.highlights.map((h) => {
-            const def = statById(h.statId);
-            if (!def) return null;
-            return (
-              <li key={h.statId} className="flex items-center gap-2.5 text-sm">
-                <span className="rounded-md bg-panel p-1 text-ink-2">
-                  <Icon name={def.icon} className="size-3.5" />
-                </span>
-                <span className="font-semibold">{formatStatValue(h.value, def.unit)}</span>
-                <span className="text-ink-2">{statNoun(def, h.value)}</span>
-              </li>
-            );
-          })}
+      {player.awards.length ? (
+        <ul className="mt-3 space-y-2.5 border-t border-line-soft pt-3" aria-label="Awards">
+          {player.awards.map((a) => (
+            <AwardLine key={a.metricId} award={a} />
+          ))}
         </ul>
       ) : null}
 

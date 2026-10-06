@@ -1,4 +1,4 @@
-import type { Highlight, PlayerStats, ServerStats, SessionEndReason } from "@smp/core";
+import type { Award, AwardsSnapshot, PlayerStats, ServerStats, SessionEndReason } from "@smp/core";
 import type { Sql } from "./executor";
 
 /**
@@ -15,7 +15,7 @@ export interface PlayerRow {
   first_seen: Date;
   last_seen: Date;
   stats: PlayerStats | null;
-  highlights: Highlight[] | null;
+  awards: Award[] | null;
   online: boolean;
 }
 
@@ -29,7 +29,7 @@ export interface SessionRow {
 
 const PLAYER_SELECT = `
   select p.id, p.player_key, p.uuid::text as uuid, p.name, p.color_index, p.first_seen, p.last_seen,
-         ps.stats, ps.highlights,
+         ps.stats, ps.awards,
          exists (select 1 from smp.sessions s where s.player_id = p.id and s.end_reason = 'open') as online
   from smp.players p
   left join smp.player_stats ps on ps.player_id = p.id`;
@@ -104,6 +104,11 @@ export function createReadStore(sql: Sql) {
         "select min(start_ts) as start, max(end_ts) as end from smp.sessions",
       );
       return row?.start && row.end ? { start: row.start, end: row.end } : null;
+    },
+
+    async awardsSnapshot(): Promise<{ data: AwardsSnapshot; computedAt: Date } | null> {
+      const [row] = await sql.query<{ data: AwardsSnapshot; computed_at: Date }>("select data, computed_at from smp.awards_snapshot where id = 1");
+      return row ? { data: row.data, computedAt: row.computed_at } : null;
     },
 
     async serverStats(): Promise<ServerStats | null> {

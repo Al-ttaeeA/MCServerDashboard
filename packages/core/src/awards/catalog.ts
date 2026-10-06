@@ -75,7 +75,7 @@ export const METRICS: readonly M[] = [
     id: "session_count", family: "sessions", source: "LOG", unit: "count", transform: "log1p", minSpread: 2,
     formula: "Number of sessions.",
     value: (f) => f.sessionCount, ...bySessions(1), reliability: 1,
-    high: title("🚪", "Can't Log Off", (c) => `${c.formatted} sessions`, (c) => `${c.name} has joined the server ${c.formatted} times — ${c.comparison}. The door's practically a revolving one.`),
+    high: title("🚪", "Can't Log Off", (c) => `${c.formatted} sessions`, (c) => `${c.name} has joined the server ${c.times} — ${c.comparison}. The door's practically a revolving one.`),
   },
   {
     id: "avg_session", family: "sessions", source: "LOG", unit: "duration", transform: "log1p", minSpread: 600,
@@ -88,7 +88,8 @@ export const METRICS: readonly M[] = [
     id: "session_cv", family: "sessions", source: "DERIVED", unit: "score", transform: "identity", minSpread: 0.15,
     formula: "Coefficient of variation of session lengths (standard deviation ÷ mean).",
     value: (f) => f.sessionCV, ...bySessions(6), reliability: 0.85,
-    high: title("🌪️", "The Chaos Agent", () => `wildly varying session lengths`, (c) => `${c.name}'s sessions are all over the place — 5 minutes one day, hours the next (variation ${c.formatted}, ${c.comparison}).`),
+    extra: (f) => ({ shortest: fmtDuration(f.shortestSessionS), longest: fmtDuration(f.longestSessionS) }),
+    high: title("🌪️", "The Chaos Agent", () => `wildly varying session lengths`, (c) => `${c.name}'s sessions are all over the place — anywhere from ${c.extra.shortest} to ${c.extra.longest} (variation ${c.formatted}, ${c.comparison}).`),
     low: title("📏", "The Consistency Merchant", () => `remarkably consistent sessions`, (c) => `${c.name}'s sessions are clockwork — the most consistent lengths on the server (variation ${c.formatted}, ${c.comparison}).`),
   },
   {
@@ -107,7 +108,7 @@ export const METRICS: readonly M[] = [
     id: "short_count_5", family: "sessions", source: "DERIVED", unit: "count", transform: "log1p", minSpread: 2, sensitive: "short_sessions",
     formula: "Number of sessions shorter than 5 minutes.",
     value: (f) => f.shortCount5, ...bySessions(5), reliability: 0.9,
-    high: title("💔", "The Commitment Issues Award", (c) => `${c.formatted} sessions under 5 min`, (c) => `${c.name} has left within five minutes of joining ${c.formatted} times — ${c.comparison}.`),
+    high: title("💔", "The Commitment Issues Award", (c) => `${c.formatted} sessions under 5 min`, (c) => `${c.name} has left within five minutes of joining ${c.times} — ${c.comparison}.`),
   },
 
   // ════════════════════════════ SCHEDULE ════════════════════════════
@@ -171,7 +172,7 @@ export const METRICS: readonly M[] = [
     id: "sunrise_sessions", family: "schedule", source: "DERIVED", unit: "count", transform: "log1p", minSpread: 1, sensitive: "schedule",
     formula: "Sessions that were still going at 06:00.",
     value: (f) => f.sunriseSessions, ...bySessions(3), reliability: 1,
-    high: title("🌄", "The Sunrise Enjoyer", (c) => `${c.formatted} sessions still going at 6 AM`, (c) => `${c.name} has watched the real sun come up mid-session ${c.formatted} times — ${c.comparison}.`),
+    high: title("🌄", "The Sunrise Enjoyer", (c) => `${c.formatted} sessions still going at 6 AM`, (c) => `${c.name} has watched the real sun come up mid-session ${c.times} — ${c.comparison}.`),
   },
   {
     id: "longest_overnight", family: "schedule", source: "DERIVED", unit: "duration", transform: "log1p", minSpread: 1800, sensitive: "schedule",
@@ -191,7 +192,7 @@ export const METRICS: readonly M[] = [
     id: "deaths", family: "deaths", source: "LOG", unit: "count", transform: "log1p", minSpread: 2, sensitive: "deaths",
     formula: "Number of death messages in the log.",
     value: (f) => f.deaths, ...byHours(2), reliability: 1,
-    high: title("🪦", "The Graveyard Regular", (c) => `${c.formatted} deaths`, (c) => `${c.name} has died ${c.formatted} times — ${c.comparison}. The respawn screen knows them by name.`),
+    high: title("🪦", "The Graveyard Regular", (c) => `${c.formatted} deaths`, (c) => `${c.name} has died ${c.times} — ${c.comparison}. The respawn screen knows them by name.`),
   },
   {
     id: "deaths_per_hour", family: "deaths", source: "DERIVED", unit: "per_hour", transform: "log1p", minSpread: 0.15, sensitive: "deaths",
@@ -211,31 +212,31 @@ export const METRICS: readonly M[] = [
     id: "mob_deaths", family: "deaths", source: "LOG", unit: "count", transform: "log1p", minSpread: 1, sensitive: "deaths",
     formula: "Deaths to mobs (melee or projectile).",
     value: (f) => f.mobDeaths, ...byHours(2), reliability: 1,
-    high: title("⚔️", "The Violent End", (c) => `${c.formatted} deaths to mobs`, (c) => `${c.name} has been taken out by mobs ${c.formatted} times — ${c.comparison}.`),
+    high: title("⚔️", "The Violent End", (c) => `${c.formatted} deaths to mobs`, (c) => `${c.name} has been taken out by mobs ${c.times} — ${c.comparison}.`),
   },
   {
     id: "fall_deaths", family: "deaths", source: "LOG", unit: "count", transform: "log1p", minSpread: 1, sensitive: "deaths",
     formula: "Deaths from falling (including being knocked off ledges).",
     value: (f) => f.fallDeaths, ...byHours(2), reliability: 1,
-    high: title("🪂", "The Fall Guy", (c) => `${c.formatted} fall deaths`, (c) => `Gravity has claimed ${c.name} ${c.formatted} times — ${c.comparison}.`),
+    high: title("🪂", "The Fall Guy", (c) => `${c.formatted} fall deaths`, (c) => `Gravity has claimed ${c.name} ${c.times} — ${c.comparison}.`),
   },
   {
     id: "creeper_deaths", family: "deaths", source: "LOG", unit: "count", transform: "log1p", minSpread: 1, sensitive: "deaths",
     formula: "Deaths where the killer was a Creeper.",
     value: (f) => f.creeperDeaths, ...byHours(2), reliability: 1,
-    high: title("💥", "Certified Creeper Victim", (c) => `blown up ${c.formatted} times`, (c) => `${c.name} has been blown up by Creepers ${c.formatted} times — ${c.comparison}. They hear "ssss" in their sleep.`),
+    high: title("💥", "Certified Creeper Victim", (c) => `blown up ${c.times}`, (c) => `${c.name} has been blown up by Creepers ${c.times} — ${c.comparison}. They hear "ssss" in their sleep.`),
   },
   {
     id: "lava_fire_deaths", family: "deaths", source: "LOG", unit: "count", transform: "log1p", minSpread: 1, sensitive: "deaths",
     formula: "Deaths from lava or fire.",
     value: (f) => f.lavaFireDeaths, ...byHours(2), reliability: 1,
-    high: title("🌋", "The Lava Enthusiast", (c) => `${c.formatted} deaths by lava or fire`, (c) => `${c.name} has burned or melted ${c.formatted} times — ${c.comparison}. The floor was lava, and they believed it.`),
+    high: title("🌋", "The Lava Enthusiast", (c) => `${c.formatted} deaths by lava or fire`, (c) => `${c.name} has burned or melted ${c.times} — ${c.comparison}. The floor was lava, and they believed it.`),
   },
   {
     id: "drowning_deaths", family: "deaths", source: "LOG", unit: "count", transform: "log1p", minSpread: 1, sensitive: "deaths",
     formula: "Deaths by drowning.",
     value: (f) => f.drowningDeaths, ...byHours(2), reliability: 1,
-    high: title("🌊", "The Water Is Fine", (c) => `drowned ${c.formatted} times`, (c) => `${c.name} has drowned ${c.formatted} times — ${c.comparison}. The water was, in fact, not fine.`),
+    high: title("🌊", "The Water Is Fine", (c) => `drowned ${c.times}`, (c) => `${c.name} has drowned ${c.times} — ${c.comparison}. The water was, in fact, not fine.`),
   },
   {
     id: "longest_deathless", family: "deaths", source: "DERIVED", unit: "hours", transform: "log1p", minSpread: 1,
@@ -247,7 +248,7 @@ export const METRICS: readonly M[] = [
     id: "max_deaths_session", family: "deaths", source: "DERIVED", unit: "count", transform: "log1p", minSpread: 1, sensitive: "deaths",
     formula: "Most deaths within a single session.",
     value: (f) => (f.maxDeathsInSession >= 2 ? f.maxDeathsInSession : 0), ...byHours(2), reliability: 1,
-    high: title("🐈", "The Nine Lives Problem", (c) => `${c.formatted} deaths in one session`, (c) => `${c.name} once died ${c.formatted} times in a single session — ${c.comparison}.`),
+    high: title("🐈", "The Nine Lives Problem", (c) => `${c.formatted} deaths in one session`, (c) => `${c.name} once died ${c.times} in a single session — ${c.comparison}.`),
   },
   {
     id: "shortest_death_gap", family: "deaths", source: "DERIVED", unit: "duration", transform: "log1p", minSpread: 120, sensitive: "deaths",
@@ -341,7 +342,7 @@ export const METRICS: readonly M[] = [
     id: "containers", family: "items", source: "PLAYER_STATS", unit: "count", transform: "log1p", minSpread: 30,
     formula: "Chests, barrels, shulker boxes and ender chests opened.",
     value: (f) => f.containersOpened, ...byStatsHours(1), reliability: 1,
-    high: title("🗃️", "The Chest Goblin", (c) => `${c.formatted} containers opened`, (c) => `${c.name} has opened storage ${c.formatted} times — ${c.comparison}. Reorganising, probably.`),
+    high: title("🗃️", "The Chest Goblin", (c) => `${c.formatted} containers opened`, (c) => `${c.name} has opened storage ${c.times} — ${c.comparison}. Reorganising, probably.`),
   },
 
   // ════════════════════════════ MOVEMENT ════════════════════════════
@@ -470,7 +471,7 @@ export const METRICS: readonly M[] = [
     id: "player_kills", family: "combat", source: "PLAYER_STATS", unit: "count", transform: "log1p", minSpread: 1,
     formula: "Players killed (the `player_kills` statistic; inactive until someone has a kill).",
     value: (f) => f.playerKills, ...byStatsHours(1), reliability: 1,
-    high: title("🩸", "The Bloodhound", (c) => `${c.formatted} player kills`, (c) => `${c.name} has killed other players ${c.formatted} times — ${c.comparison}. Sleep with one eye open.`),
+    high: title("🩸", "The Bloodhound", (c) => `${c.formatted} player kills`, (c) => `${c.name} has killed other players ${c.times} — ${c.comparison}. Sleep with one eye open.`),
   },
 
   // ════════════════════════════ PROGRESSION ════════════════════════════
@@ -535,7 +536,7 @@ export const METRICS: readonly M[] = [
     id: "trades", family: "progression", source: "PLAYER_STATS", unit: "count", transform: "log1p", minSpread: 5,
     formula: "Villager trades.",
     value: (f) => f.trades, ...byStatsHours(1), reliability: 1,
-    high: title("🤑", "The Villager Exploiter", (c) => `${c.formatted} trades`, (c) => `${c.name} has traded with villagers ${c.formatted} times — ${c.comparison}. Hrmm.`),
+    high: title("🤑", "The Villager Exploiter", (c) => `${c.formatted} trades`, (c) => `${c.name} has traded with villagers ${c.times} — ${c.comparison}. Hrmm.`),
   },
   {
     id: "animals_bred", family: "progression", source: "PLAYER_STATS", unit: "count", transform: "log1p", minSpread: 5,
@@ -582,7 +583,7 @@ export const METRICS: readonly M[] = [
     id: "replies", family: "chat", source: "DERIVED", unit: "count", transform: "log1p", minSpread: 3, sensitive: "chat_volume",
     formula: "Messages sent within 20 seconds of someone else's message.",
     value: (f) => f.replies, sample: (f) => f.chatMessages, minSample: 10, halfConfidenceAt: 20, reliability: 0.9,
-    high: title("↩️", "The Reply Guy", (c) => `${c.formatted} instant replies`, (c) => `${c.name} has fired back within 20 seconds of someone else ${c.formatted} times — ${c.comparison}.`),
+    high: title("↩️", "The Reply Guy", (c) => `${c.formatted} instant replies`, (c) => `${c.name} has fired back within 20 seconds of someone else ${c.times} — ${c.comparison}.`),
   },
   {
     id: "message_length", family: "chat", source: "LOG", unit: "count", transform: "log1p", minSpread: 4, sensitive: "chat_style",
@@ -647,7 +648,7 @@ export const METRICS: readonly M[] = [
     id: "last_man_standing", family: "social", source: "DERIVED", unit: "count", transform: "log1p", minSpread: 2,
     formula: "Sessions where they had company, and were the last one left when they logged off.",
     value: (f) => f.lastManStanding, ...bySessions(3), reliability: 0.9,
-    high: title("🕯️", "The Last Man Standing", (c) => `last one online ${c.formatted} times`, (c) => `${c.name} has been the last person on the server ${c.formatted} times — ${c.comparison}. Someone has to turn off the lights.`),
+    high: title("🕯️", "The Last Man Standing", (c) => `last one online ${c.times}`, (c) => `${c.name} has been the last person on the server ${c.times} — ${c.comparison}. Someone has to turn off the lights.`),
   },
   {
     id: "welcome_committee", family: "social", source: "DERIVED", unit: "count", transform: "log1p", minSpread: 3,
@@ -683,8 +684,8 @@ export const META_METRICS: readonly MetricDefinition<MetaFeatures & PlayerFeatur
     id: "grindset", family: "meta", source: "DERIVED", unit: "score", transform: "identity", minSpread: 0.3,
     formula: "Average z-score of mining rate, ore rate, hostile kill rate, distance rate and advancement rate (activity per hour).",
     value: (f) => f.grind, ...byStatsHours(3), reliability: 0.8,
-    high: title("💪", "The Grindset", () => `the most productive hours on the server`, (c) => `Hour for hour, ${c.name} gets more done than anyone — mining, fighting, travelling and progressing (activity score ${c.formatted}).`),
-    low: title("🌴", "The Vibes-Only Player", () => `the most relaxed pace on the server`, (c) => `${c.name} plays at the most relaxed pace on the server — less mining, fighting and travelling per hour than anyone (activity score ${c.formatted}). Pure vibes.`),
+    high: title("💪", "The Grindset", () => `the most productive hours on the server`, (c) => `Hour for hour, ${c.name} has the highest combined rate of mining, fighting, travelling and progressing on the server (activity score ${c.formatted}).`),
+    low: title("🌴", "The Vibes-Only Player", () => `the most relaxed pace on the server`, (c) => `${c.name} plays at the most relaxed pace on the server — the lowest combined rate of mining, fighting, travelling and progressing (activity score ${c.formatted}). Pure vibes.`),
   },
 ];
 

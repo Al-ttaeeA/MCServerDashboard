@@ -80,6 +80,7 @@ function printSummary(s: IngestSummary) {
   console.log(`Detected ${c.JOIN ?? 0} join(s), ${c.LEAVE ?? 0} leave(s), ${c.DEATH ?? 0} death(s), ${c.ADVANCEMENT ?? 0} advancement(s)`);
   console.log(`Inserted ${s.insertedEvents} event(s)`);
   console.log(`Rebuilt ${s.sessions} session(s) for ${s.players} player(s)` + (s.newPlayers ? ` — ${s.newPlayers} new player(s)` : ""));
+  if (s.awards) console.log(`Assigned ${s.awards} award(s)`);
   if (s.openSessions) console.log(`${s.openSessions} player(s) currently online`);
   if (s.world) {
     const w = s.world;

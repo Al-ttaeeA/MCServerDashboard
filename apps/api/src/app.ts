@@ -3,6 +3,7 @@ import {
   ESTIMATED_END_REASONS,
   STAT_DEFINITIONS,
   playerColor,
+  type AwardsResponse,
   type LeaderboardsResponse,
   type MetaResponse,
   type PlayerDetailResponse,
@@ -121,6 +122,44 @@ export function createApp(deps: AppDeps) {
     return c.json(body);
   });
 
+  app.get("/awards", async (c) => {
+    const store = c.get("store");
+    const [snapshot, players] = await Promise.all([store.awardsSnapshot(), store.listPlayers()]);
+    if (!snapshot) {
+      return c.json<AwardsResponse>({ computedAt: null, awards: [], records: [], metrics: [] });
+    }
+    const refByKey = new Map(players.map((p) => [p.player_key, toRef(p)]));
+    const { data } = snapshot;
+    const titleOf = new Map(data.metrics.flatMap((m) => [
+      [`${m.id}:high`, m.high],
+      [`${m.id}:low`, m.low],
+    ]));
+    const body: AwardsResponse = {
+      computedAt: snapshot.computedAt.toISOString(),
+      awards: data.assignments
+        .filter((a) => refByKey.has(a.playerKey))
+        .map((a) => ({ ...a.award, player: refByKey.get(a.playerKey)! }))
+        .sort((a, b) => b.score - a.score),
+      records: data.records.flatMap((r) => {
+        const player = refByKey.get(r.playerKey);
+        const t = titleOf.get(`${r.metricId}:${r.direction}`);
+        return player && t ? [{ metricId: r.metricId, title: t.title, emoji: t.emoji, direction: r.direction, player, value: r.value, formatted: r.formatted }] : [];
+      }),
+      metrics: data.metrics,
+    };
+    if (c.req.query("debug") === "1") {
+      const won = new Set(data.assignments.map((a) => `${a.award.metricId}:${a.playerKey}`));
+      body.debug = {
+        candidates: data.candidates.flatMap((cand) => {
+          const player = refByKey.get(cand.playerKey);
+          return player ? [{ ...cand, player, won: won.has(`${cand.metricId}:${cand.playerKey}`) }] : [];
+        }),
+        diagnostics: data.diagnostics.map((d) => ({ ...d, rows: d.rows.map((r) => ({ ...r, player: refByKey.get(r.playerKey) ?? null })) })),
+      };
+    }
+    return c.json(body);
+  });
+
   app.get("/leaderboards", async (c) => {
     const players = (await c.get("store").listPlayers()).filter((p) => p.stats);
     const body: LeaderboardsResponse = {
@@ -160,7 +199,7 @@ function toSummary(p: PlayerRow): PlayerSummaryDto {
     online: p.online,
     playtimeSeconds: p.stats?.playtimeSeconds ?? 0,
     sessionCount: p.stats?.sessionCount ?? 0,
-    highlights: p.highlights ?? [],
+    awards: p.awards ?? [],
   };
 }
 

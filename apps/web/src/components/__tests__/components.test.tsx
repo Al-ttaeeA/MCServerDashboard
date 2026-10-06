@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { PlayerSummaryDto } from "@smp/core";
+import type { Award, PlayerSummaryDto } from "@smp/core";
 import { PlayerPopover } from "../timeline/PlayerPopover";
 import { TimelineToolbar } from "../timeline/TimelineToolbar";
 
@@ -15,6 +15,10 @@ vi.mock("next/link", () => ({
 
 afterEach(cleanup);
 
+function award(metricId: string, title: string, emoji: string, line: string): Award {
+  return { metricId, title, emoji, line, direction: "high", value: 1, formatted: "1", explanation: `${title} explanation`, percentile: 100, median: 1, ratioToMedian: 2, score: 0.8 };
+}
+
 const player: PlayerSummaryDto = {
   id: "11111111-2222-4333-8444-555555555555",
   name: "Alex",
@@ -25,21 +29,21 @@ const player: PlayerSummaryDto = {
   online: false,
   playtimeSeconds: 127 * 3600 + 42 * 60,
   sessionCount: 40,
-  highlights: [
-    { statId: "longest_session", value: 8 * 3600 + 14 * 60, score: 0 },
-    { statId: "deaths", value: 1, score: 0 },
-    { statId: "advancements", value: 24, score: 0 },
+  awards: [
+    award("longest_session", "The Marathon", "🏃", "8h 14m longest session"),
+    award("night_share", "The Night Shift", "🌙", "71% late-night play"),
+    award("diamond_ore", "The Diamond Goblin", "💎", "2,431 diamond ore mined"),
   ],
 };
 
 describe("PlayerPopover", () => {
-  it("shows playtime, three highlights and a link to the full profile", () => {
+  it("shows playtime, three awards and a link to the full profile", () => {
     render(<PlayerPopover player={player} anchor={{ x: 10, y: 10 }} onClose={() => {}} />);
     expect(screen.getByRole("dialog", { name: "Alex summary" })).toBeTruthy();
     expect(screen.getByText("127h 42m")).toBeTruthy();
-    expect(screen.getByText("8h 14m")).toBeTruthy();
-    expect(screen.getByText("death")).toBeTruthy(); // singular for 1
-    expect(screen.getByText("24")).toBeTruthy();
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+    expect(screen.getByText("The Night Shift")).toBeTruthy();
+    expect(screen.getByText("2,431 diamond ore mined")).toBeTruthy();
     expect(screen.getByRole("link", { name: /view all stats/i }).getAttribute("href")).toBe("/player/?name=Alex");
   });
 

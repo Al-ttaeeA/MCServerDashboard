@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { allocateAwards } from "../allocate";
 import { computeAwards } from "../engine";
 import type { AwardsInput } from "../features";
-import { fmtClock, fmtComparison, fmtDuration } from "../format";
+import { META_METRICS, METRICS } from "../catalog";
+import { fmtClock, fmtComparison, fmtDuration, fmtTimes, fmtValue } from "../format";
 import { evaluateMetric, midRankPercentile, transformValue } from "../significance";
 import type { Candidate, MetricDefinition, MetricFamily } from "../types";
 
@@ -244,6 +245,50 @@ describe("computeAwards (end to end)", () => {
     expect(result.candidates.length).toBeGreaterThanOrEqual(all.length);
     expect(result.diagnostics.length).toBeGreaterThan(50);
     expect(result.metrics.length).toBeGreaterThanOrEqual(50);
+  });
+});
+
+describe("explanation templates", () => {
+  const ctx = (value: number, unit: MetricDefinition<unknown>["unit"]) => ({
+    name: "Alex",
+    value,
+    formatted: fmtValue(value, unit),
+    times: fmtTimes(value),
+    median: 1,
+    medianFormatted: "1",
+    comparison: "2× the server median",
+    extra: { every: "1h", km: "1", messages: "3", hours: "2h", partner: "Bea", together: "1h", shortest: "1m", longest: "2h" },
+  });
+
+  it("per-hour rates keep their decimals (never rounded to 'once')", () => {
+    for (const m of [...METRICS, ...META_METRICS].filter((x) => x.unit === "per_hour")) {
+      for (const t of [m.high, m.low]) {
+        if (!t) continue;
+        const text = t.explain(ctx(0.6, m.unit)) + " " + t.line(ctx(0.6, m.unit));
+        expect(text, `${m.id} ${t.title}`).not.toMatch(/\bonce\b/);
+      }
+    }
+  });
+
+  it("every template renders without undefined/NaN for typical values", () => {
+    for (const m of [...METRICS, ...META_METRICS]) {
+      for (const t of [m.high, m.low]) {
+        if (!t) continue;
+        const text = t.explain(ctx(12, m.unit)) + t.line(ctx(12, m.unit));
+        expect(text, m.id).not.toMatch(/undefined|NaN/);
+      }
+    }
+  });
+
+  it("metadata is complete for every metric", () => {
+    const all = [...METRICS, ...META_METRICS];
+    expect(all.length).toBeGreaterThanOrEqual(50);
+    expect(new Set(all.map((m) => m.id)).size).toBe(all.length);
+    for (const m of all) {
+      expect(m.formula.length, m.id).toBeGreaterThan(5);
+      expect(m.high ?? m.low, m.id).toBeDefined();
+      expect(["LOG", "PLAYER_STATS", "ADVANCEMENTS", "PLAYER_DATA", "DERIVED"]).toContain(m.source);
+    }
   });
 });
 

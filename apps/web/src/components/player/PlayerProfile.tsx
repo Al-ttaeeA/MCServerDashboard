@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { isoDateInZone, statById, statNoun, type DeathCategory, type PlayerDetailResponse } from "@smp/core";
+import { isoDateInZone, type DeathCategory, type PlayerDetailResponse } from "@smp/core";
 import { useApi } from "@/lib/api";
 import { useNow } from "@/lib/use-now";
 import {
@@ -17,6 +17,7 @@ import {
   formatRelative,
   formatStatValue,
 } from "@/lib/format";
+import { AwardCard } from "@/components/awards/AwardBadge";
 import { BarList } from "@/components/charts/BarList";
 import { CalendarHeatmap } from "@/components/charts/CalendarHeatmap";
 import { ColumnChart } from "@/components/charts/ColumnChart";
@@ -45,6 +46,7 @@ const CATEGORY_LABEL: Record<DeathCategory, string> = {
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const NAV = [
+  ["awards", "Awards"],
   ["overview", "Overview"],
   ["activity", "Activity"],
   ["timeline", "Timeline"],
@@ -109,19 +111,16 @@ function Profile({ data }: { data: PlayerDetailResponse }) {
               Joined {formatDate(stats.firstSeen ?? player.firstSeen)}
               {data.formerNames.length ? <span className="text-ink-3"> · formerly {data.formerNames.join(", ")}</span> : null}
             </p>
-            {player.highlights.length ? (
-              <ul className="mt-3 flex flex-wrap gap-2" aria-label="Highlights">
-                {player.highlights.map((h) => {
-                  const def = statById(h.statId);
-                  if (!def) return null;
-                  return (
-                    <li key={h.statId} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-bg/60 px-2.5 py-1 text-xs">
-                      <Icon name={def.icon} className="size-3.5 text-ink-3" />
-                      <span className="font-semibold">{formatStatValue(h.value, def.unit)}</span>
-                      <span className="text-ink-2">{statNoun(def, h.value)}</span>
-                    </li>
-                  );
-                })}
+            {player.awards.length ? (
+              <ul className="mt-3 flex flex-wrap gap-2" aria-label="Awards">
+                {player.awards.map((a) => (
+                  <li key={a.metricId}>
+                    <a href="#awards" className="inline-flex items-center gap-1.5 rounded-full border border-line bg-bg/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] hover:border-ink-3">
+                      <span aria-hidden>{a.emoji}</span>
+                      {a.title}
+                    </a>
+                  </li>
+                ))}
               </ul>
             ) : null}
           </div>
@@ -134,6 +133,32 @@ function Profile({ data }: { data: PlayerDetailResponse }) {
           ))}
         </nav>
       </header>
+
+      {/* Awards */}
+      <Section
+        id="awards"
+        title="Awards"
+        description="Chosen automatically: the three things that make this player stand out most compared with everyone else."
+        action={
+          <Link href={`/awards/?debug=1&player=${encodeURIComponent(player.name)}`} className="text-xs text-ink-3 hover:text-ink">
+            How were these picked?
+          </Link>
+        }
+      >
+        {player.awards.length ? (
+          <div className="grid gap-3 md:grid-cols-3">
+            {player.awards.map((a, i) => (
+              <AwardCard key={a.metricId} award={a} rank={i + 1} />
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <EmptyState icon="trophy" title="No awards yet">
+              Nothing about {player.name}&apos;s play stands out from the rest of the server yet — or there isn&apos;t enough data. Check back after a few more sessions.
+            </EmptyState>
+          </Card>
+        )}
+      </Section>
 
       {/* Overview */}
       <Section id="overview" title="Overview" action={<ProvenanceTag kind="derived" />}>

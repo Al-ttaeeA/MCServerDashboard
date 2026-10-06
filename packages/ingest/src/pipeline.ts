@@ -8,14 +8,15 @@ import {
   inferLatestLogDate,
   parseIsoDate,
   parseLog,
-  pickHighlights,
+  computeAwards,
+  type Award,
   resolvePlayers,
   zonedTimeToUtc,
   type LogEvent,
   type LogFileInfo,
   type TimelineItem,
 } from "@smp/core";
-import { createIngestStore, type IngestStore, type LogFileRow, type Sql } from "@smp/db";
+import { createIngestStore, createWorldStore, type IngestStore, type LogFileRow, type Sql } from "@smp/db";
 import type { LogSource, RemoteFile, ServerFs } from "./sources/types";
 import { syncWorldData, type WorldSyncSummary } from "./world-sync";
 
@@ -49,6 +50,7 @@ export interface IngestSummary {
   sessions: number;
   openSessions: number;
   world: WorldSyncSummary | null;
+  awards: number;
   durationMs: number;
 }
 
@@ -79,6 +81,7 @@ export async function runIngestion(opts: IngestOptions): Promise<IngestSummary> 
     sessions: 0,
     openSessions: 0,
     world: null,
+    awards: 0,
     durationMs: 0,
   };
 
@@ -246,13 +249,36 @@ async function rebuildDerived(store: IngestStore, opts: IngestOptions, summary: 
     now: (opts.now ?? Date.now)(),
   });
 
+  // Awards: per-player world data + the reconstructed timeline.
+  const world = await createWorldStore(opts.sql).loadAll();
+  const awardsResult = computeAwards({
+    players: [...players.values()].map((p) => ({ key: p.key, uuid: p.uuid, name: p.name })),
+    sessions: built.sessions,
+    events: items
+      .map((it, i) => ({ playerKey: keys[i] ?? null, ts: it.ts, event: it.event }))
+      .filter((e) => e.event.type === "DEATH" || e.event.type === "CHAT"),
+    worldStats: world.stats,
+    worldAdvancements: world.advancements,
+    profiles: world.profiles,
+    timeZone: opts.statsTimeZone,
+    now: (opts.now ?? Date.now)(),
+  });
+  summary.awards = [...awardsResult.awards.values()].reduce((n, l) => n + l.length, 0);
+
   const { newPlayers } = await store.writeDerived({
     players,
     eventPlayerKeys: items.map((it, i) => ({ eventId: Number(it.id), playerKey: keys[i] ?? null })),
     sessions: built.sessions,
     serverRuns: built.serverRuns,
     playerStats: stats.players,
-    highlights: new Map([...stats.players.keys()].map((key) => [key, pickHighlights(key, stats.players)])),
+    awards: awardsResult.awards,
+    awardsSnapshot: {
+      metrics: awardsResult.metrics,
+      assignments: [...awardsResult.awards].flatMap(([playerKey, list]) => list.map((award: Award) => ({ playerKey, award }))),
+      records: awardsResult.records,
+      candidates: awardsResult.candidates,
+      diagnostics: awardsResult.diagnostics,
+    },
     serverStats: stats.server,
   });
 

@@ -79,6 +79,7 @@ export interface PlayerFeatures {
   playtimeH: number;
   sessionCount: number;
   longestSessionS: number;
+  shortestSessionS: number;
   avgSessionS: number;
   sessionCV: number | null;
   longestGapH: number | null;
@@ -312,6 +313,7 @@ export function computeFeatures(input: AwardsInput): Map<string, PlayerFeatures>
       playtimeH,
       sessionCount: sessions.length,
       longestSessionS: Math.max(0, ...durations),
+      shortestSessionS: durations.length ? Math.min(...durations) : 0,
       avgSessionS: sessions.length ? playtimeS / sessions.length : 0,
       sessionCV: durations.length >= 2 ? std(durations) / (mean(durations) || 1) : null,
       longestGapH: gaps.length ? Math.max(...gaps) : null,
