@@ -147,6 +147,8 @@ create index sessions_player_start_idx on smp.sessions (player_id, start_ts desc
 create table smp.player_stats (
   player_id    bigint primary key references smp.players (id) on delete cascade,
   stats        jsonb not null,
+  -- The 3 stats highlighted in the timeline popover (see core/stats/registry.ts).
+  highlights   jsonb not null default '[]'::jsonb,
   computed_at  timestamptz not null default now()
 );
 

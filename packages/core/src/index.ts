@@ -18,3 +18,4 @@ export * from "./stats/types";
 export * from "./stats/buckets";
 export * from "./stats/compute";
 export * from "./stats/registry";
+export * from "./api/dto";

@@ -1,4 +1,4 @@
-import type { BuiltServerRun, BuiltSession, LogEvent, LogEventType, ParseIssue, PlayerIdentity, PlayerStats, ServerStats } from "@smp/core";
+import type { Highlight, BuiltServerRun, BuiltSession, LogEvent, LogEventType, ParseIssue, PlayerIdentity, PlayerStats, ServerStats } from "@smp/core";
 import { deathCategory, nextColorIndex } from "@smp/core";
 import type { Sql } from "./executor";
 
@@ -193,6 +193,7 @@ export function createIngestStore(sql: Sql) {
       sessions: (BuiltSession & { joinEventId: string; leaveEventId: string | null })[];
       serverRuns: BuiltServerRun[];
       playerStats: Map<string, PlayerStats>;
+      highlights: Map<string, Highlight[]>;
       serverStats: ServerStats;
     }): Promise<{ newPlayers: number }> {
       return sql.transaction(async (tx) => {
@@ -311,9 +312,18 @@ export function createIngestStore(sql: Sql) {
         // 4. Precomputed stats.
         await tx.query("delete from smp.player_stats");
         await tx.query(
-          `insert into smp.player_stats (player_id, stats)
-           select x.player_id, x.stats from jsonb_to_recordset($1::jsonb) as x(player_id bigint, stats jsonb)`,
-          [JSON.stringify([...input.playerStats].map(([key, stats]) => ({ player_id: pid(key), stats })))],
+          `insert into smp.player_stats (player_id, stats, highlights)
+           select x.player_id, x.stats, x.highlights
+           from jsonb_to_recordset($1::jsonb) as x(player_id bigint, stats jsonb, highlights jsonb)`,
+          [
+            JSON.stringify(
+              [...input.playerStats].map(([key, stats]) => ({
+                player_id: pid(key),
+                stats,
+                highlights: input.highlights.get(key) ?? [],
+              })),
+            ),
+          ],
         );
         await tx.query(
           `insert into smp.server_stats (id, stats, computed_at) values (1, $1::jsonb, now())

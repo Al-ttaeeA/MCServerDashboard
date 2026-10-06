@@ -1,0 +1,27 @@
+// Cloudflare Worker configuration. Deployed with `npm run deploy --workspace @smp/api`.
+// See docs/deployment.md for the one-time setup (Hyperdrive config id below).
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "smp-analytics",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  // postgres.js needs Node built-ins (net/tls via Cloudflare sockets).
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "../web/out",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    // Only API requests invoke the Worker; static files are served directly (free, not counted).
+    "run_worker_first": ["/api/*"]
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      // Replace with the id printed by `npx wrangler hyperdrive create …`.
+      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      // Used by `wrangler dev` only; real credentials live in the Hyperdrive config.
+      "localConnectionString": "postgresql://postgres:postgres@localhost:5432/postgres"
+    }
+  ],
+  "observability": { "enabled": true }
+}

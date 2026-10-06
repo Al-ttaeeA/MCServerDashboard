@@ -8,6 +8,7 @@ import {
   inferLatestLogDate,
   parseIsoDate,
   parseLog,
+  pickHighlights,
   resolvePlayers,
   zonedTimeToUtc,
   type LogEvent,
@@ -121,7 +122,7 @@ async function processFile(
   }
 
   const raw = await opts.source.read(file.name);
-  const text = (info.kind === "rotated" && info.gzip ? gunzipSync(raw) : raw).toString("utf8");
+  const text = new TextDecoder("utf-8").decode(info.kind === "rotated" && info.gzip ? gunzipSync(raw) : raw);
   const firstLine = text.slice(0, Math.max(0, text.indexOf("\n"))).replace(/\r$/, "");
   if (firstLine.trim() === "") {
     log(`  ${file.name}: empty, skipping`);
@@ -241,6 +242,7 @@ async function rebuildDerived(store: IngestStore, opts: IngestOptions, summary: 
     sessions: built.sessions,
     serverRuns: built.serverRuns,
     playerStats: stats.players,
+    highlights: new Map([...stats.players.keys()].map((key) => [key, pickHighlights(key, stats.players)])),
     serverStats: stats.server,
   });
 
