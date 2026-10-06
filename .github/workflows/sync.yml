@@ -1,0 +1,81 @@
+# Pulls new Minecraft log lines from WiseHosting over SFTP and updates Supabase.
+#
+# Schedule: every 30 minutes. GitHub runs schedules on a best-effort basis
+# (often 5–20 min late, occasionally skipped under load). To change the
+# cadence, edit the cron line below (GitHub can't read it from a variable).
+#
+# Public repo note: workflow logs are public. The sync prints only file
+# names and counts — never chat, IP addresses or raw log lines — and all
+# credentials come from encrypted secrets, which GitHub masks in logs.
+name: Sync server logs
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      reparse:
+        description: "Re-parse every available log file (after a parser update)"
+        type: boolean
+        default: false
+
+# Never run two syncs at once; a queued run waits for the current one.
+concurrency:
+  group: log-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write # only for the keep-alive step below
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SFTP_HOST: ${{ secrets.SFTP_HOST }}
+      SFTP_PORT: ${{ secrets.SFTP_PORT }}
+      SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+      SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+      SFTP_LOG_DIR: ${{ vars.SFTP_LOG_DIR || 'logs' }}
+      SERVER_LOG_TIMEZONE: ${{ vars.SERVER_LOG_TIMEZONE || 'UTC' }}
+      STATS_TIMEZONE: ${{ vars.STATS_TIMEZONE || 'America/New_York' }}
+      CONFIGURED: ${{ secrets.DATABASE_URL != '' && secrets.SFTP_HOST != '' }}
+    steps:
+      - name: Check configuration
+        if: env.CONFIGURED != 'true'
+        run: echo "::notice::Skipping sync — DATABASE_URL / SFTP_* secrets aren't set yet (see docs/deployment.md)."
+
+      - uses: actions/checkout@v4
+        if: env.CONFIGURED == 'true'
+
+      - uses: actions/setup-node@v4
+        if: env.CONFIGURED == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        if: env.CONFIGURED == 'true'
+        run: npm ci --no-audit --no-fund
+
+      - name: Apply database migrations
+        if: env.CONFIGURED == 'true'
+        run: npm run db:migrate
+
+      - name: Sync logs
+        if: env.CONFIGURED == 'true'
+        run: npm run sync -- ${{ inputs.reparse && '--reparse' || '' }}
+
+      # GitHub disables scheduled workflows in public repos after 60 days
+      # without repository activity. Re-enabling the workflow once a month
+      # via the API keeps it alive (GitHub still emails before disabling).
+      - name: Keep schedule alive
+        if: github.event_name == 'schedule' && env.CONFIGURED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(date -u +%d%H)" = "0100" ]; then
+            gh workflow enable sync.yml --repo "$GITHUB_REPOSITORY" && echo "Schedule refreshed."
+          fi
