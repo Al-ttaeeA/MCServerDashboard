@@ -1,26 +1,129 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens. Dark by default: the app is a "night-time HUD" — near-black
+ * slate surfaces, hairline borders, one restrained accent. Player colours
+ * come from the validated palette in @smp/core and only ever colour marks
+ * (bars, dots, swatches), never text.
+ */
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --color-bg: #090b0f;
+  --color-surface: #0e1014;
+  --color-panel: #12151b;
+  --color-raised: #181c24;
+  --color-line: #222833;
+  --color-line-soft: #1a1f28;
+  --color-grid: #161a22;
+
+  --color-ink: #e9ecf1;
+  --color-ink-2: #a4abb8;
+  --color-ink-3: #6c7380;
+
+  /* Brand accent: XP-orb green, used sparingly (logo, focus, links). */
+  --color-accent: #7ee08a;
+  --color-accent-dim: #3c6b43;
+
+  /* Status (reserved meaning, always paired with an icon/label). */
+  --color-good: #0ca30c;
+  --color-warning: #fab219;
+  --color-critical: #d03b3b;
+
+  --radius-card: 10px;
+  --shadow-pop: 0 18px 48px -12px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.04);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  /* Faint block grid — a Minecraft nod that stays out of the way. */
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.018) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.018) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-attachment: fixed;
+}
+
+::selection {
+  background: rgb(126 224 138 / 0.28);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Section labels: small caps HUD style. */
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(12 163 12 / 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgb(12 163 12 / 0);
+  }
+}
+.live-dot {
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-panel) 25%, var(--color-raised) 50%, var(--color-panel) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop-in {
+  animation: pop-in 140ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot,
+  .skeleton,
+  .pop-in {
+    animation: none;
+  }
 }

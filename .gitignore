@@ -13,6 +13,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!apps/web/.env.development
 .dev.vars
 .dev.vars.*
 *.pem

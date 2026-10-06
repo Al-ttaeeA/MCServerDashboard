@@ -11,6 +11,7 @@ export default defineConfig([
     "**/.wrangler/**",
     "**/coverage/**",
     "samples/**",
+    ".data/**",
   ]),
   ...tseslint.configs.recommended,
   {
