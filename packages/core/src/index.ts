@@ -13,3 +13,8 @@ export * from "./logs/log-files";
 export * from "./time/zoned";
 export * from "./sessions/build-sessions";
 export * from "./sessions/resolve-players";
+export * from "./colors";
+export * from "./stats/types";
+export * from "./stats/buckets";
+export * from "./stats/compute";
+export * from "./stats/registry";
