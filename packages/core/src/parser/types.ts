@@ -39,7 +39,16 @@ export type LogEvent =
   /** `X has made the advancement [Y]` (also challenge / goal variants). */
   | { type: "ADVANCEMENT"; player: string; advancement: string; kind: AdvancementKind }
   /** `<X> message` — we record only *that* a player chatted, never the content. */
-  | { type: "CHAT"; player: string };
+  | {
+      type: "CHAT";
+      player: string;
+      /** Derived features only — the message text itself is never kept. */
+      length: number;
+      /** Share of letters that are capitals (null with fewer than 4 letters). */
+      capsShare: number | null;
+      /** Short non-cryptographic hash of the normalised text, to spot repeats. */
+      hash: string;
+    };
 
 export type LogEventType = LogEvent["type"];
 

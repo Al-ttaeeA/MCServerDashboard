@@ -43,6 +43,30 @@ function nameBefore(text: string, suffix: string): string | null {
   return isPlayerName(name) ? name : null;
 }
 
+/**
+ * Per-message features for chat-style statistics. Computed here so the text
+ * never leaves the parser.
+ */
+export function chatFeatures(message: string): { length: number; capsShare: number | null; hash: string } {
+  const letters = message.match(/\p{L}/gu) ?? [];
+  const upper = letters.filter((c) => c !== c.toLowerCase()).length;
+  return {
+    length: [...message].length,
+    capsShare: letters.length >= 4 ? Math.round((upper / letters.length) * 1000) / 1000 : null,
+    hash: fnv1a(message.toLowerCase().replace(/\s+/g, " ").trim()),
+  };
+}
+
+/** 32-bit FNV-1a → 8 hex chars. Collisions are fine (it only spots repeats). */
+function fnv1a(s: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+}
+
 export const MATCHERS: readonly Matcher[] = [
   {
     id: "server_start",
@@ -131,6 +155,15 @@ export const MATCHERS: readonly Matcher[] = [
     },
   },
   {
+    id: "admin_feedback",
+    match(msg) {
+      // Command output broadcast to ops, e.g. `/data get entity`:
+      // "Steve has the following entity data: 20.0f". Not a player event.
+      const { text } = stripSystemChat(msg);
+      return /^[A-Za-z0-9_]{1,16} has the following /.test(text) ? "ignore" : null;
+    },
+  },
+  {
     id: "chat",
     match(msg) {
       // `<Steve> hello` — optionally prefixed with `[Not Secure] ` on servers
@@ -140,7 +173,8 @@ export const MATCHERS: readonly Matcher[] = [
       const end = text.indexOf("> ");
       if (end === -1) return null;
       const player = text.slice(1, end);
-      return isPlayerName(player) ? { type: "CHAT", player } : null;
+      if (!isPlayerName(player)) return null;
+      return { type: "CHAT", player, ...chatFeatures(text.slice(end + 2)) };
     },
   },
   {

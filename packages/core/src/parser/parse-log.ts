@@ -51,7 +51,9 @@ export function parseLog(text: string, options: ParseOptions = {}): ParseResult 
 
     const line = tokenizeLine(raw);
     if (!line) {
-      if (isContinuationLine(raw)) continuationLines++;
+      // log4j writes multi-line messages (stack traces, "Reason: …" on bans)
+      // as header-less lines after the entry they belong to.
+      if (prevSecond !== null ? looksLikeContinuation(raw) : isContinuationLine(raw)) continuationLines++;
       else issues.push({ lineNo, reason: "malformed_line", raw: truncate(raw) });
       continue;
     }
@@ -120,6 +122,16 @@ function looksLikeUnrecognizedPlayerMessage(
  * Issues are stored and printed in (public) CI output, so IP addresses are
  * redacted and very long lines are cut.
  */
+/**
+ * After a real log entry, any header-less line is a continuation of it —
+ * unless it looks like a broken header or contains control characters
+ * (corruption / a partial write), which we do want to flag.
+ */
+function looksLikeContinuation(line: string): boolean {
+  if (/[\u0000-\u0008\u000e-\u001f]/.test(line)) return false;
+  return !/^\[\d{1,2}:\d/.test(line);
+}
+
 function truncate(s: string): string {
   const redacted = redactIps(s);
   return redacted.length > 500 ? redacted.slice(0, 500) + "…" : redacted;

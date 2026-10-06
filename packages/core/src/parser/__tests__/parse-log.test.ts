@@ -171,19 +171,24 @@ describe("parseLog — deaths, advancements, chat", () => {
     ]);
   });
 
-  it("records chat without its content", () => {
-    const r = parseLog(log(["10:00:00", S, "<Bea> my secret base is at 100 64 -200"], ["10:00:01", S, "[Not Secure] <Alex_01> hi"]));
-    expect(r.events.map((e) => e.event)).toEqual([
-      { type: "CHAT", player: "Bea" },
-      { type: "CHAT", player: "Alex_01" },
-    ]);
+  it("records chat features but never its content", () => {
+    const r = parseLog(log(["10:00:00", S, "<Bea> my secret base is at 100 64 -200"], ["10:00:01", S, "[Not Secure] <Alex_01> HELLO EVERYONE"]));
+    const [a, b] = r.events.map((e) => e.event) as Extract<LogEvent, { type: "CHAT" }>[];
+    expect(a).toMatchObject({ type: "CHAT", player: "Bea", length: 32, capsShare: 0 });
+    expect(b).toMatchObject({ type: "CHAT", player: "Alex_01", length: 14, capsShare: 1 });
+    expect(a!.hash).toMatch(/^[0-9a-f]{8}$/);
     expect(JSON.stringify(r)).not.toContain("secret");
   });
 
+  it("gives repeated messages the same hash regardless of case and spacing", () => {
+    const evs = events(log(["10:00:00", S, "<Bea> gg"], ["10:00:05", S, "<Bea>  GG "], ["10:00:09", S, "<Bea> lol"])) as Extract<LogEvent, { type: "CHAT" }>[];
+    expect(evs[0]!.hash).toBe(evs[1]!.hash);
+    expect(evs[0]!.hash).not.toBe(evs[2]!.hash);
+    expect(evs[0]!.capsShare).toBeNull(); // too few letters to judge
+  });
+
   it("does not mistake quoted death text in chat for a death", () => {
-    expect(events(log(["10:00:00", S, "<Bea> Alex_01 tried to swim in lava."]), known)).toEqual([
-      { type: "CHAT", player: "Bea" },
-    ]);
+    expect(events(log(["10:00:00", S, "<Bea> Alex_01 tried to swim in lava."]), known).map((e) => e.type)).toEqual(["CHAT"]);
   });
 });
 
@@ -195,6 +200,28 @@ describe("parseLog — robustness", () => {
     const r = parseLog(text);
     expect(r.issues).toEqual([]);
     expect(r.continuationLines).toBe(2);
+  });
+
+  it("treats header-less lines after an entry as part of a multi-line message", () => {
+    const text =
+      log(["06:37:30", S, "Disconnecting OvlaxO (/203.0.113.4:5000): You are banned from this server."]) +
+      "Reason: Banned by an operator.\n" +
+      log(["06:37:31", S, "System chat: Bea joined the game"]);
+    const r = parseLog(text);
+    expect(r.issues).toEqual([]);
+    expect(r.continuationLines).toBe(1);
+    expect(r.events.map((e) => e.event.type)).toEqual(["JOIN"]);
+  });
+
+  it("still flags broken headers and control characters mid-file", () => {
+    const text = log(["10:00:00", S, "Bea joined the game"]) + "[10:0\n" + "bad\u0001bytes\n";
+    expect(parseLog(text).issues.map((i) => i.reason)).toEqual(["malformed_line", "malformed_line"]);
+  });
+
+  it("ignores admin command output about players", () => {
+    const r = parseLog(log(["06:35:51", S, "System chat: OvlaxO has the following entity data: 20.0f"]), { knownPlayers: ["OvlaxO"] });
+    expect(r.issues).toEqual([]);
+    expect(r.ignoredLines).toBe(1);
   });
 
   it("reports malformed lines and keeps going", () => {
