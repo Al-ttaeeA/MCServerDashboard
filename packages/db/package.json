@@ -1,0 +1,22 @@
+{
+  "name": "@smp/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "PostgreSQL schema, migrations and typed queries shared by the ingester and the API.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "migrate": "tsx src/cli/migrate.ts"
+  },
+  "dependencies": {
+    "@smp/core": "*",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "tsx": "^4.23.15"
+  }
+}

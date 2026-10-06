@@ -1,0 +1,13 @@
+{
+  "name": "@smp/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-free domain logic: log parsing, session reconstruction, statistics, shared DTO types.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  }
+}

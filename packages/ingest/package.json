@@ -1,0 +1,21 @@
+{
+  "name": "@smp/ingest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CLI that pulls Minecraft logs over SFTP (or from a local folder) and writes them to Postgres.",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "import": "tsx src/cli.ts import",
+    "sync": "tsx src/cli.ts sync"
+  },
+  "dependencies": {
+    "@smp/core": "*",
+    "@smp/db": "*",
+    "ssh2-sftp-client": "^12.1.1",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/ssh2-sftp-client": "^9.0.6"
+  }
+}

@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+
+# build output
+.next/
+out/
+dist/
+.wrangler/
+*.tsbuildinfo
+coverage/
+
+# Secrets — NEVER commit these. Use .env.example as the template.
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# Real server logs contain player IPs and chat. This repo is public,
+# so they must never be committed. Tests use synthetic fixtures instead.
+samples/
+logs/
+*.log
+*.log.gz
+
+# Local data (PGlite dev database, downloaded log cache)
+.data/
+
+# misc
+.DS_Store
+Thumbs.db
+npm-debug.log*

@@ -1,0 +1,35 @@
+{
+  "name": "mc-server-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Analytics dashboard for a vanilla Minecraft SMP, built from server logs.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "npm run dev --workspace @smp/web",
+    "dev:api": "npm run dev --workspace @smp/api",
+    "build": "npm run build --workspace @smp/web",
+    "lint": "eslint . && npm run lint --workspace @smp/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
+    "import:logs": "npm run import --workspace @smp/ingest --",
+    "sync": "npm run sync --workspace @smp/ingest --",
+    "db:migrate": "npm run migrate --workspace @smp/db --"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "eslint": "^9",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  }
+}
