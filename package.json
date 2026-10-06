@@ -23,13 +23,15 @@
     "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "import:logs": "npm run import --workspace @smp/ingest --",
     "sync": "npm run sync --workspace @smp/ingest --",
-    "db:migrate": "npm run migrate --workspace @smp/db --"
+    "db:migrate": "npm run migrate --workspace @smp/db --",
+    "docs:awards": "tsx scripts/gen-awards-doc.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",
     "eslint": "^9",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.71.1",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "tsx": "^4.23.15"
   }
 }

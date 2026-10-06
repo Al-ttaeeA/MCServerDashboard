@@ -44,20 +44,8 @@ DST-safe: a session from 23:30 to 01:15 counts 30 minutes toward one day and
 over session boundaries), busiest day, daily and hourly totals, deaths, advancements,
 chat count, server runs and crashes, and Minecraft versions seen.
 
-## Highlights ("3 significant stats")
+## Awards
 
-The timeline popover shows three highlighted stats per player, stored in
-`player_stats.highlights` during sync.
-
-**Current state: placeholder.** `pickHighlights()` in `stats/registry.ts` returns a
-fixed preference order: longest session, deaths, advancements.
-
-The foundation for the real algorithm is already in place:
-- **`STAT_DEFINITIONS`** is a registry of comparable stats. Each entry says how to read
-  its value, its unit, and whether high, low or both are notable.
-- **`pickHighlights()`** already receives every player's stats, so it can compare one
-  player against the server.
-- **It runs at sync time**, so a heavier algorithm costs nothing at request time.
-
-The population-relative significance scoring (percentiles, robust deviation,
-reliability weighting) will replace the placeholder body without changing any callers.
+The three awards on each player card are chosen by the significance algorithm
+and global allocation described in **[awards.md](awards.md)**, which also lists
+all 100 award metrics with their sources and formulas.

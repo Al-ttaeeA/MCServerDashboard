@@ -151,5 +151,6 @@ concurrency, "plays most with", deaths per hour, crash count.
 - AFK time
 - advancements earned before logging began, or while `announceAdvancements` was off
 
-Most of these exist in `world/stats/<uuid>.json` and `world/advancements/<uuid>.json`,
-which a later phase may read over the same SFTP connection.
+Many of these are now read from the per-player world files instead: `world/players/stats`,
+`world/players/advancements` and `world/players/data` (26.1+ layout). See
+[awards.md](awards.md#1-data-sources).

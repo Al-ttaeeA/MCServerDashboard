@@ -5,7 +5,10 @@ interactive, zoomable **activity timeline**: who was online and when. Every play
 also gets a full profile with playtime, activity patterns, deaths and advancements.
 
 It works with a **completely vanilla** server: no plugins, mods, Paper or Fabric.
-All data comes from the server's own log files, read over SFTP. It runs on
+All data comes from files the server already writes, read over SFTP: its logs,
+plus each player's vanilla statistics, advancements and (a few safe fields of)
+player data. From those, every player gets three automatically chosen
+**awards** (*The Night Shift*, *The Diamond Goblin*, …). It runs on
 **$0/month** of free-tier infrastructure.
 
 ## Architecture
@@ -98,14 +101,15 @@ See **[docs/deployment.md](docs/deployment.md)** for the step-by-step $0 setup:
 
 - [docs/deployment.md](docs/deployment.md): deploying for $0, secrets, free-tier limits
 - [docs/parser.md](docs/parser.md): log format, recognized events, session reconstruction, idempotency, what the logs can't tell us
-- [docs/statistics.md](docs/statistics.md): how every stat is computed, time zones, the highlight system
+- [docs/statistics.md](docs/statistics.md): how every profile stat is computed, time zones
+- [docs/awards.md](docs/awards.md): the 100 award metrics, data sources, significance maths and award allocation
 
 ## Project structure
 
 ```
 apps/
   web/                 Next.js site (static export)
-    src/app/           routes: / (timeline), /player/?name=, /leaderboards/
+    src/app/           routes: / (timeline), /player/?name=, /awards/, /leaderboards/
     src/components/    timeline (canvas renderer, toolbar, popover), player page, charts, UI
     src/lib/           API client, formatting, pure timeline maths (viewport, ticks, model)
   api/                 Cloudflare Worker: Hono app, Worker entry, local Node dev server
@@ -113,7 +117,9 @@ packages/
   core/                framework-free domain logic + shared API types
     parser/            tokenizer, matchers, death-message catalog
     sessions/          session reconstruction, player identity
-    stats/             statistics, stat registry, highlights
+    stats/             profile statistics, simple stat registry
+    awards/            award metrics, significance scoring, min-cost-flow allocation
+    world/             NBT reader, stats/advancements/player-data parsers
     logs/ time/        log file naming/dating, timezone helpers
   db/                  migrations, Sql interface (postgres.js / PGlite), read & write queries
   ingest/              CLI + pipeline, SFTP and local-folder log sources
