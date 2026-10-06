@@ -27,7 +27,15 @@ export interface AwardsResult {
   diagnostics: MetricDiagnostics[];
   metrics: MetricInfo[];
   /** The single #1 per metric and direction (ties → none), awarded or not. */
-  records: { metricId: string; direction: "high" | "low"; playerKey: string; value: number; formatted: string }[];
+  records: {
+    metricId: string;
+    direction: "high" | "low";
+    playerKey: string;
+    value: number;
+    formatted: string;
+    /** Top 3 eligible players in this direction (the record holder first). */
+    contenders: { playerKey: string; value: number; formatted: string }[];
+  }[];
 }
 
 type AnyMetric = MetricDefinition<PlayerFeatures> | MetricDefinition<MetaFeatures & PlayerFeatures>;
@@ -81,7 +89,14 @@ export function computeAwards(input: AwardsInput, config: AwardsConfig = AWARDS_
       if (!(direction === "high" ? def.high : def.low)) continue;
       const sorted = [...rows].sort((a, b) => (direction === "high" ? b.value - a.value : a.value - b.value));
       if (sorted[0]!.value === sorted[1]!.value) continue;
-      records.push({ metricId: d.metricId, direction, playerKey: sorted[0]!.playerKey, value: sorted[0]!.value, formatted: fmtValue(sorted[0]!.value, def.unit) });
+      records.push({
+        metricId: d.metricId,
+        direction,
+        playerKey: sorted[0]!.playerKey,
+        value: sorted[0]!.value,
+        formatted: fmtValue(sorted[0]!.value, def.unit),
+        contenders: sorted.slice(0, 3).map((r) => ({ playerKey: r.playerKey, value: r.value, formatted: fmtValue(r.value, def.unit) })),
+      });
     }
   }
 

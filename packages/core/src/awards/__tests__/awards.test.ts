@@ -241,6 +241,18 @@ describe("computeAwards (end to end)", () => {
     expect(noDeaths.diagnostics.some((d) => d.metricId === "deaths")).toBe(false);
   });
 
+  it("records list up to three contenders, holder first, in record order", () => {
+    expect(result.records.length).toBeGreaterThan(0);
+    for (const r of result.records) {
+      expect(r.contenders.length).toBeGreaterThanOrEqual(2);
+      expect(r.contenders.length).toBeLessThanOrEqual(3);
+      expect(r.contenders[0]!.playerKey).toBe(r.playerKey);
+      const vals = r.contenders.map((c) => c.value);
+      const sorted = [...vals].sort((a, b) => (r.direction === "high" ? b - a : a - b));
+      expect(vals).toEqual(sorted);
+    }
+  });
+
   it("exposes every candidate and diagnostic for the debug view", () => {
     expect(result.candidates.length).toBeGreaterThanOrEqual(all.length);
     expect(result.diagnostics.length).toBeGreaterThan(50);

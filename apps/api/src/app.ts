@@ -130,6 +130,7 @@ export function createApp(deps: AppDeps) {
     }
     const refByKey = new Map(players.map((p) => [p.player_key, toRef(p)]));
     const { data } = snapshot;
+    const formulaOf = new Map(data.metrics.map((m) => [m.id, m.formula]));
     const titleOf = new Map(data.metrics.flatMap((m) => [
       [`${m.id}:high`, m.high],
       [`${m.id}:low`, m.low],
@@ -143,7 +144,12 @@ export function createApp(deps: AppDeps) {
       records: data.records.flatMap((r) => {
         const player = refByKey.get(r.playerKey);
         const t = titleOf.get(`${r.metricId}:${r.direction}`);
-        return player && t ? [{ metricId: r.metricId, title: t.title, emoji: t.emoji, direction: r.direction, player, value: r.value, formatted: r.formatted }] : [];
+        if (!player || !t) return [];
+        const contenders = (r.contenders ?? [{ playerKey: r.playerKey, value: r.value, formatted: r.formatted }]).flatMap((x) => {
+          const p = refByKey.get(x.playerKey);
+          return p ? [{ player: p, formatted: x.formatted }] : [];
+        });
+        return [{ metricId: r.metricId, title: t.title, emoji: t.emoji, direction: r.direction, player, value: r.value, formatted: r.formatted, description: formulaOf.get(r.metricId) ?? "", contenders }];
       }),
       metrics: data.metrics,
     };

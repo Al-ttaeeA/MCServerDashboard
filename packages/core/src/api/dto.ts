@@ -91,7 +91,15 @@ export interface AwardsSnapshot {
   metrics: MetricInfo[];
   assignments: { playerKey: string; award: Award }[];
   /** #1 per metric and direction, whether or not it was awarded. */
-  records: { metricId: string; direction: "high" | "low"; playerKey: string; value: number; formatted: string }[];
+  records: {
+    metricId: string;
+    direction: "high" | "low";
+    playerKey: string;
+    value: number;
+    formatted: string;
+    /** Top 3 in this direction (older snapshots may lack it). */
+    contenders?: { playerKey: string; value: number; formatted: string }[];
+  }[];
   candidates: Candidate[];
   diagnostics: MetricDiagnostics[];
 }
@@ -99,7 +107,19 @@ export interface AwardsSnapshot {
 export interface AwardsResponse {
   computedAt: string | null;
   awards: (Award & { player: PlayerRefDto })[];
-  records: { metricId: string; title: string; emoji: string; direction: "high" | "low"; player: PlayerRefDto; value: number; formatted: string }[];
+  records: {
+    metricId: string;
+    title: string;
+    emoji: string;
+    direction: "high" | "low";
+    player: PlayerRefDto;
+    value: number;
+    formatted: string;
+    /** What the record measures (the metric's formula). */
+    description: string;
+    /** Top 3 contenders, record holder first. */
+    contenders: { player: PlayerRefDto; formatted: string }[];
+  }[];
   metrics: MetricInfo[];
   /** Only with ?debug=1. */
   debug?: {

@@ -7,6 +7,7 @@ import type { AwardsResponse } from "@smp/core";
 import { useApi } from "@/lib/api";
 import { formatRelative } from "@/lib/format";
 import { ordinal } from "@/components/awards/AwardBadge";
+import { RecordInfo } from "@/components/awards/RecordInfo";
 import { Avatar, Card, EmptyState, ErrorState, Section, Skeleton } from "@/components/ui/primitives";
 
 function AwardsPage() {
@@ -70,7 +71,10 @@ function AwardsPage() {
                     {r.emoji}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs text-ink-3">{r.title}</span>
+                    <span className="flex items-center gap-1 text-xs text-ink-3">
+                      <span className="truncate">{r.title}</span>
+                      <RecordInfo record={r} />
+                    </span>
                     <span className="flex items-center gap-1.5 text-sm">
                       <Avatar uuid={r.player.uuid} name={r.player.name} color={r.player.color} size={16} />
                       <span className="truncate">{r.player.name}</span>
