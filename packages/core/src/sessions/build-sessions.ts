@@ -117,7 +117,10 @@ export function buildSessions(items: readonly TimelineItem[]): BuildResult {
   for (const item of items) {
     const ts = item.ts;
     if (item.kind === "heartbeat") {
-      ensureRun(ts).endTs = Math.max(run!.endTs, ts);
+      // A plain log line only extends a run that's already in progress. It
+      // must not start one: lines after a stop, or from a server that never
+      // finished starting (e.g. EULA not accepted), aren't a running server.
+      if (run) run.endTs = Math.max(run.endTs, ts);
       lastTs = ts;
       continue;
     }

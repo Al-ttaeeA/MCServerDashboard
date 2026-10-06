@@ -109,6 +109,15 @@ describe("buildSessions", () => {
     expect(buildSessions(items).sessions[0]!.disconnectReason).toBe("Timed out");
   });
 
+  it("lines outside a run (failed start, after a stop) don't create phantom runs", () => {
+    const items = timeline([0, "heartbeat"], [5, start], [6, join("Alex")], [60, stop], [60, "heartbeat"], [61, start], [70, "heartbeat"]);
+    const runs = buildSessions(items).serverRuns;
+    expect(runs.map((r) => [r.endReason, (r.startTs - T0) / M, (r.endTs - T0) / M])).toEqual([
+      ["stop", 5, 60],
+      ["open", 61, 70],
+    ]);
+  });
+
   it("logs that start mid-run create an implicit run", () => {
     const { serverRuns } = buildSessions(timeline([0, join("Alex")], [10, leave("Alex")]));
     expect(serverRuns).toHaveLength(1);

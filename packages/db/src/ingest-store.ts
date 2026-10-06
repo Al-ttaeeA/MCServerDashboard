@@ -32,7 +32,7 @@ export function createIngestStore(sql: Sql) {
 
     async finishSyncRun(id: number, status: "success" | "failed", summary: object, error?: string) {
       await sql.query(
-        "update smp.sync_runs set finished_at = now(), status = $2, summary = $3::jsonb, error = $4 where id = $1",
+        "update smp.sync_runs set finished_at = now(), status = $2, summary = $3::text::jsonb, error = $4 where id = $1",
         [id, status, JSON.stringify(summary), error ?? null],
       );
     },
@@ -120,7 +120,7 @@ export function createIngestStore(sql: Sql) {
           const res = await tx.query<{ id: number }>(
             `insert into smp.events (log_file_id, line_no, ts, type, data)
              select $1, x.line_no, x.ts, x.type::smp.event_type, x.data
-             from jsonb_to_recordset($2::jsonb) as x(line_no int, ts timestamptz, type text, data jsonb)
+             from jsonb_to_recordset($2::text::jsonb) as x(line_no int, ts timestamptz, type text, data jsonb)
              on conflict (log_file_id, line_no) do nothing
              returning id`,
             [file.id, JSON.stringify(payload)],
@@ -131,7 +131,7 @@ export function createIngestStore(sql: Sql) {
           await tx.query(
             `insert into smp.parse_issues (log_file_id, line_no, reason, raw)
              select $1, x.line_no, x.reason, x.raw
-             from jsonb_to_recordset($2::jsonb) as x(line_no int, reason text, raw text)
+             from jsonb_to_recordset($2::text::jsonb) as x(line_no int, reason text, raw text)
              on conflict do nothing`,
             [file.id, JSON.stringify(issues.map((i) => ({ line_no: i.lineNo, reason: i.reason, raw: i.raw })))],
           );
@@ -224,7 +224,7 @@ export function createIngestStore(sql: Sql) {
         const ids = await tx.query<{ id: number; player_key: string }>(
           `insert into smp.players (player_key, uuid, name, color_index, first_seen, last_seen)
            select x.player_key, x.uuid::uuid, x.name, x.color_index, x.first_seen, x.last_seen
-           from jsonb_to_recordset($1::jsonb) as x(player_key text, uuid text, name text, color_index int, first_seen timestamptz, last_seen timestamptz)
+           from jsonb_to_recordset($1::text::jsonb) as x(player_key text, uuid text, name text, color_index int, first_seen timestamptz, last_seen timestamptz)
            on conflict (player_key) do update set
              uuid = excluded.uuid, name = excluded.name,
              first_seen = excluded.first_seen, last_seen = excluded.last_seen, updated_at = now()
@@ -241,7 +241,7 @@ export function createIngestStore(sql: Sql) {
         await tx.query(
           `insert into smp.player_names (player_id, name, first_seen, last_seen)
            select x.player_id, x.name, x.first_seen, x.last_seen
-           from jsonb_to_recordset($1::jsonb) as x(player_id bigint, name text, first_seen timestamptz, last_seen timestamptz)
+           from jsonb_to_recordset($1::text::jsonb) as x(player_id bigint, name text, first_seen timestamptz, last_seen timestamptz)
            on conflict (player_id, name) do update set last_seen = greatest(smp.player_names.last_seen, excluded.last_seen)`,
           [
             JSON.stringify(
@@ -260,7 +260,7 @@ export function createIngestStore(sql: Sql) {
         // 2. Point events at players (only rows that changed).
         await tx.query(
           `update smp.events e set player_id = x.player_id
-           from jsonb_to_recordset($1::jsonb) as x(id bigint, player_id bigint)
+           from jsonb_to_recordset($1::text::jsonb) as x(id bigint, player_id bigint)
            where e.id = x.id and e.player_id is distinct from x.player_id`,
           [
             JSON.stringify(
@@ -291,7 +291,7 @@ export function createIngestStore(sql: Sql) {
         await tx.query(
           `insert into smp.sessions (player_id, server_run_id, start_ts, end_ts, end_reason, join_event_id, leave_event_id, disconnect_reason)
            select x.player_id, x.server_run_id, x.start_ts, x.end_ts, x.end_reason, x.join_event_id, x.leave_event_id, x.disconnect_reason
-           from jsonb_to_recordset($1::jsonb) as x(player_id bigint, server_run_id bigint, start_ts timestamptz, end_ts timestamptz,
+           from jsonb_to_recordset($1::text::jsonb) as x(player_id bigint, server_run_id bigint, start_ts timestamptz, end_ts timestamptz,
              end_reason text, join_event_id bigint, leave_event_id bigint, disconnect_reason text)`,
           [
             JSON.stringify(
@@ -314,7 +314,7 @@ export function createIngestStore(sql: Sql) {
         await tx.query(
           `insert into smp.player_stats (player_id, stats, highlights)
            select x.player_id, x.stats, x.highlights
-           from jsonb_to_recordset($1::jsonb) as x(player_id bigint, stats jsonb, highlights jsonb)`,
+           from jsonb_to_recordset($1::text::jsonb) as x(player_id bigint, stats jsonb, highlights jsonb)`,
           [
             JSON.stringify(
               [...input.playerStats].map(([key, stats]) => ({
@@ -326,7 +326,7 @@ export function createIngestStore(sql: Sql) {
           ],
         );
         await tx.query(
-          `insert into smp.server_stats (id, stats, computed_at) values (1, $1::jsonb, now())
+          `insert into smp.server_stats (id, stats, computed_at) values (1, $1::text::jsonb, now())
            on conflict (id) do update set stats = excluded.stats, computed_at = now()`,
           [JSON.stringify(input.serverStats)],
         );

@@ -70,7 +70,7 @@ export function createReadStore(sql: Sql) {
     async playersByKeys(keys: string[]): Promise<PlayerRow[]> {
       if (keys.length === 0) return [];
       return sql.query<PlayerRow>(
-        `${PLAYER_SELECT} where p.player_key in (select jsonb_array_elements_text($1::jsonb))`,
+        `${PLAYER_SELECT} where p.player_key in (select jsonb_array_elements_text($1::text::jsonb))`,
         [JSON.stringify(keys)],
       );
     },
@@ -81,7 +81,7 @@ export function createReadStore(sql: Sql) {
         `select p.player_key, s.start_ts, s.end_ts, s.duration_seconds, s.end_reason
          from smp.sessions s join smp.players p on p.id = s.player_id
          where s.start_ts < $2 and s.end_ts > $1
-           and ($3::jsonb is null or p.player_key in (select jsonb_array_elements_text($3::jsonb)))
+           and ($3::text::jsonb is null or p.player_key in (select jsonb_array_elements_text($3::text::jsonb)))
          order by s.start_ts`,
         [from.toISOString(), to.toISOString(), playerKeys ? JSON.stringify(playerKeys) : null],
       );
