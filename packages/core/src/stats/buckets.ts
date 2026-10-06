@@ -6,6 +6,8 @@ export interface LocalSlice {
   hour: number;
   /** Monday = 0 … Sunday = 6. */
   weekday: number;
+  /** Seconds into the local hour where this slice starts (0 unless the session began mid-hour). */
+  startSecond: number;
   seconds: number;
 }
 
@@ -28,7 +30,7 @@ export function forEachLocalHour(
     const msIntoHour = (p.minute * 60 + p.second) * 1000 + (t % 1000);
     const next = Math.min(endMs, t + 3_600_000 - msIntoHour);
     const date = `${p.year}-${pad(p.month)}-${pad(p.day)}`;
-    fn({ date, hour: p.hour, weekday: mondayIndex(p.year, p.month, p.day), seconds: (next - t) / 1000 });
+    fn({ date, hour: p.hour, weekday: mondayIndex(p.year, p.month, p.day), startSecond: msIntoHour / 1000, seconds: (next - t) / 1000 });
     t = next;
   }
 }

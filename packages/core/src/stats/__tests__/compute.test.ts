@@ -23,14 +23,14 @@ describe("forEachLocalHour", () => {
   });
 
   it("assigns hours and weekdays", () => {
-    const slices: { hour: number; weekday: number; seconds: number }[] = [];
-    forEachLocalHour(utc("2026-10-05T10:45:00Z"), utc("2026-10-05T12:00:00Z"), "UTC", ({ hour, weekday, seconds }) =>
-      slices.push({ hour, weekday, seconds }),
+    const slices: { hour: number; weekday: number; startSecond: number; seconds: number }[] = [];
+    forEachLocalHour(utc("2026-10-05T10:45:00Z"), utc("2026-10-05T12:00:00Z"), "UTC", ({ hour, weekday, startSecond, seconds }) =>
+      slices.push({ hour, weekday, startSecond, seconds }),
     );
     // 2026-10-05 is a Monday.
     expect(slices).toEqual([
-      { hour: 10, weekday: 0, seconds: 900 },
-      { hour: 11, weekday: 0, seconds: 3600 },
+      { hour: 10, weekday: 0, startSecond: 2700, seconds: 900 },
+      { hour: 11, weekday: 0, startSecond: 0, seconds: 3600 },
     ]);
   });
 });
