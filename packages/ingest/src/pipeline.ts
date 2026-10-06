@@ -16,10 +16,13 @@ import {
   type TimelineItem,
 } from "@smp/core";
 import { createIngestStore, type IngestStore, type LogFileRow, type Sql } from "@smp/db";
-import type { LogSource, RemoteFile } from "./sources/types";
+import type { LogSource, RemoteFile, ServerFs } from "./sources/types";
+import { syncWorldData, type WorldSyncSummary } from "./world-sync";
 
 export interface IngestOptions {
   source: LogSource;
+  /** Server root, for per-player world data (stats/advancements/player data). Optional. */
+  world?: ServerFs;
   sql: Sql;
   mode: "import" | "sync";
   /** Timezone the server writes log timestamps in (UTC on WiseHosting). */
@@ -45,6 +48,7 @@ export interface IngestSummary {
   newPlayers: number;
   sessions: number;
   openSessions: number;
+  world: WorldSyncSummary | null;
   durationMs: number;
 }
 
@@ -74,6 +78,7 @@ export async function runIngestion(opts: IngestOptions): Promise<IngestSummary> 
     newPlayers: 0,
     sessions: 0,
     openSessions: 0,
+    world: null,
     durationMs: 0,
   };
 
@@ -91,6 +96,11 @@ export async function runIngestion(opts: IngestOptions): Promise<IngestSummary> 
     const known = new Set(await store.knownPlayerNames());
     for (const { remote: file, info } of files) {
       await processFile(store, opts, file, info, known, summary, log);
+    }
+
+    if (opts.world) {
+      log("Reading player world data (statistics, advancements, player data)…");
+      summary.world = await syncWorldData(opts.world, opts.sql, log, (opts.now ?? Date.now)());
     }
 
     log("Rebuilding sessions and statistics…");

@@ -19,3 +19,5 @@ export * from "./stats/buckets";
 export * from "./stats/compute";
 export * from "./stats/registry";
 export * from "./api/dto";
+export * from "./world/nbt";
+export * from "./world/world-files";

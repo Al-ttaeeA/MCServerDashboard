@@ -1,5 +1,5 @@
 import SftpClient from "ssh2-sftp-client";
-import type { LogSource, RemoteFile } from "./types";
+import type { RemoteFile, ServerFs } from "./types";
 
 export interface SftpConfig {
   host: string;
@@ -11,11 +11,11 @@ export interface SftpConfig {
 }
 
 /**
- * SFTP is SSH-based file transfer. WiseHosting (like most game panels) runs
- * an SFTP server per game server, rooted at the server's folder, using your
- * panel credentials. We only ever list and download — never write.
+ * SFTP is SSH-based file transfer. WiseHosting runs an SFTP server per game
+ * server, rooted at the server's folder. We only ever list and download —
+ * never write.
  */
-export async function createSftpSource(config: SftpConfig): Promise<LogSource> {
+export async function createSftpFs(config: SftpConfig): Promise<ServerFs> {
   const client = new SftpClient("smp-ingest");
   await client.connect({
     host: config.host,
@@ -26,18 +26,17 @@ export async function createSftpSource(config: SftpConfig): Promise<LogSource> {
     retries: 2,
     retry_minTimeout: 2_000,
   });
-  const dir = config.logDir.replace(/\/+$/, "");
   return {
-    description: `sftp://${config.host}:${config.port}${dir.startsWith("/") ? "" : "/"}${dir}`,
-    async list(): Promise<RemoteFile[]> {
+    description: `sftp://${config.host}:${config.port}`,
+    async list(dir: string): Promise<RemoteFile[]> {
       const entries = await client.list(dir);
       return entries
-        .filter((e) => e.type === "-")
-        .map((e) => ({ name: e.name, size: e.size, mtimeMs: e.modifyTime }));
+        .filter((e) => e.type === "-" || e.type === "d")
+        .map((e) => ({ name: e.name, size: e.size, mtimeMs: e.modifyTime, isDirectory: e.type === "d" }));
     },
-    async read(name: string): Promise<Buffer> {
-      const data = await client.get(`${dir}/${name}`);
-      if (!Buffer.isBuffer(data)) throw new Error(`Unexpected SFTP response for ${name}`);
+    async read(path: string): Promise<Buffer> {
+      const data = await client.get(path);
+      if (!Buffer.isBuffer(data)) throw new Error(`Unexpected SFTP response for ${path}`);
       return data;
     },
     async close() {

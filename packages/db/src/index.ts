@@ -3,3 +3,4 @@
 export type { Sql } from "./executor";
 export { createIngestStore, type IngestStore, type LogFileRow } from "./ingest-store";
 export { createReadStore, type ReadStore, type PlayerRow, type SessionRow } from "./read-store";
+export { createWorldStore, type WorldStore } from "./world-store";

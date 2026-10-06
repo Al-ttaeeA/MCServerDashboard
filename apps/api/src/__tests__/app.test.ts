@@ -44,7 +44,7 @@ beforeAll(async () => {
   ]);
   const source: LogSource = {
     description: "memory",
-    list: async () => [...files].map(([name, f]) => ({ name, size: f.data.length, mtimeMs: f.mtimeMs })),
+    list: async () => [...files].map(([name, f]) => ({ name, size: f.data.length, mtimeMs: f.mtimeMs, isDirectory: false })),
     read: async (name) => files.get(name)!.data,
     close: async () => {},
   };

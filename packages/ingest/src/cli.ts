@@ -13,9 +13,11 @@ import { parseArgs } from "node:util";
 import { openDatabase } from "@smp/db/node";
 import { ConfigError, loadEnvFiles, readIngestConfig, readSftpConfig, resolveFromRepoRoot } from "./config";
 import { runIngestion, type IngestSummary } from "./pipeline";
-import { createLocalSource } from "./sources/local";
-import { createSftpSource } from "./sources/sftp";
-import type { LogSource } from "./sources/types";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { createLocalFs } from "./sources/local";
+import { createSftpFs } from "./sources/sftp";
+import { logSourceFrom, type LogSource, type ServerFs } from "./sources/types";
 
 async function main(): Promise<number> {
   const { values, positionals } = parseArgs({
@@ -34,19 +36,29 @@ async function main(): Promise<number> {
   loadEnvFiles();
   const config = readIngestConfig();
 
+  let fs: ServerFs;
   let source: LogSource;
+  let world: ServerFs | undefined;
   if (values.dir) {
-    source = createLocalSource(resolveFromRepoRoot(values.dir));
+    // A local copy of the server root (logs/, world/, server.properties), or just a folder of logs.
+    const dir = resolveFromRepoRoot(values.dir);
+    fs = createLocalFs(dir);
+    const hasLogsDir = existsSync(join(dir, "logs"));
+    source = logSourceFrom(fs, hasLogsDir ? "logs" : ".");
+    world = hasLogsDir ? fs : undefined;
   } else {
     const sftp = readSftpConfig();
     console.log(`Connecting to WiseHosting (${sftp.host}:${sftp.port})…`);
-    source = await createSftpSource(sftp);
+    fs = await createSftpFs(sftp);
+    source = logSourceFrom(fs, sftp.logDir);
+    world = fs;
   }
 
   const sql = await openDatabase(config.databaseUrl);
   try {
     const summary = await runIngestion({
       source,
+      world,
       sql,
       mode,
       serverTimeZone: config.serverTimeZone,
@@ -57,7 +69,7 @@ async function main(): Promise<number> {
     printSummary(summary);
     return 0;
   } finally {
-    await source.close().catch(() => {});
+    await fs.close().catch(() => {});
     await sql.close().catch(() => {});
   }
 }
@@ -69,6 +81,15 @@ function printSummary(s: IngestSummary) {
   console.log(`Inserted ${s.insertedEvents} event(s)`);
   console.log(`Rebuilt ${s.sessions} session(s) for ${s.players} player(s)` + (s.newPlayers ? ` — ${s.newPlayers} new player(s)` : ""));
   if (s.openSessions) console.log(`${s.openSessions} player(s) currently online`);
+  if (s.world) {
+    const w = s.world;
+    console.log(
+      w.layout
+        ? `World data (${w.worldDir}/, ${w.layout} layout): ${w.updated.stats} stats, ${w.updated.advancements} advancement, ${w.updated.playerdata} player-data file(s) updated, ${w.unchanged} unchanged` +
+            (w.failed ? `, ${w.failed} failed` : "")
+        : "World data: not found",
+    );
+  }
   if (s.newIssues) console.log(`⚠ ${s.newIssues} new parse issue(s) — see smp.parse_issues (${s.totalIssues} total)`);
   console.log(`Sync complete in ${(s.durationMs / 1000).toFixed(1)}s.`);
 }

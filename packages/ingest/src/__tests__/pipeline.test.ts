@@ -22,7 +22,7 @@ class MemorySource implements LogSource {
     this.files.set(to, { data: gzipSync(latest.data), mtimeMs: latest.mtimeMs });
   }
   async list(): Promise<RemoteFile[]> {
-    return [...this.files].map(([name, f]) => ({ name, size: f.data.length, mtimeMs: f.mtimeMs }));
+    return [...this.files].map(([name, f]) => ({ name, size: f.data.length, mtimeMs: f.mtimeMs, isDirectory: false }));
   }
   async read(name: string) {
     this.reads.push(name);
@@ -200,7 +200,7 @@ describe("runIngestion", () => {
   });
 
   it("records parse issues without failing", async () => {
-    source.put("2026-10-05-1.log.gz", DAY1 + "%%% corrupted line %%%\n", "2026-10-05T11:06:00Z");
+    source.put("2026-10-05-1.log.gz", DAY1 + "[11:0 corrupted header\n", "2026-10-05T11:06:00Z");
     const s = await sync();
     expect(s.newIssues).toBe(1);
     expect(await count("parse_issues")).toBe(1);
