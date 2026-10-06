@@ -15,6 +15,7 @@ import {
 } from "@/lib/timeline/viewport";
 import { formatDateTime, formatDuration, formatRange } from "@/lib/format";
 import { useNow } from "@/lib/use-now";
+import { FloatingTip } from "@/components/ui/FloatingTip";
 import { Avatar, OnlineBadge } from "@/components/ui/primitives";
 import { LAYOUT, canvasHeight, plotTop, render } from "./render";
 
@@ -44,6 +45,9 @@ const END_REASON_NOTE: Record<string, string> = {
 interface Hover {
   x: number;
   y: number;
+  /** Pointer position in viewport coordinates (for the floating readout). */
+  clientX: number;
+  clientY: number;
   rowIndex: number | null;
   session: Interval | null;
   time: number;
@@ -134,7 +138,7 @@ export function ActivityTimeline({
       // Hit target is wider than the bar: 6px either side.
       const tolerance = (6 / width) * span(viewportRef.current);
       const session = row ? sessionNear(row.sessions, time, tolerance) : null;
-      return { x, y, rowIndex: row ? rowIndex : null, session, time };
+      return { x, y, clientX, clientY, rowIndex: row ? rowIndex : null, session, time };
     },
     [rows, width, height, top],
   );
@@ -306,26 +310,15 @@ export function ActivityTimeline({
           }}
         />
         {hover && !dragging && !suppressHover ? (
-          <HoverReadout hover={hover} width={width} row={hoveredRow} online={readout} />
+          <HoverReadout hover={hover} row={hoveredRow} online={readout} />
         ) : null}
       </div>
     </div>
   );
 }
 
-function HoverReadout({
-  hover,
-  width,
-  row,
-  online,
-}: {
-  hover: Hover;
-  width: number;
-  row: TimelineRow | undefined;
-  online: PlayerRefDto[];
-}) {
+function HoverReadout({ hover, row, online }: { hover: Hover; row: TimelineRow | undefined; online: PlayerRefDto[] }) {
   const s = hover.session;
-  const flip = hover.x > width - 260;
   let body: ReactNode;
   if (s && row) {
     body = (
@@ -362,13 +355,11 @@ function HoverReadout({
       </>
     );
   }
+  // Rendered into <body> so short containers (e.g. the one-row player timeline) can't clip it.
   return (
-    <div
-      className="pointer-events-none absolute z-10 min-w-44 max-w-64 rounded-lg border border-line bg-raised/95 px-3 py-2 shadow-[var(--shadow-pop)] backdrop-blur"
-      style={{ left: flip ? undefined : hover.x + 14, right: flip ? width - hover.x + 14 : undefined, top: Math.max(4, hover.y - 20) }}
-    >
+    <FloatingTip anchor={{ x: hover.clientX, y: hover.clientY }} className="min-w-44 max-w-64">
       {body}
-    </div>
+    </FloatingTip>
   );
 }
 

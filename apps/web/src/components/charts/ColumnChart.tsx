@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useLayoutEffect, useRef, useState } from "react";
+import { FloatingTip } from "@/components/ui/FloatingTip";
 
 export interface ColumnDatum {
   key: string;
@@ -35,6 +36,7 @@ export function ColumnChart({
   durationAxis?: boolean;
 }) {
   const [active, setActive] = useState<number | null>(null);
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
   const id = useId();
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(600);
@@ -56,6 +58,12 @@ export function ColumnChart({
   const y = (v: number) => pad.top + innerH - (v / max) * innerH;
   const ticks = [0, max / 2, max];
   const activeDatum = active !== null ? data[active] : undefined;
+  /** Anchor the tooltip just above the bar (or the baseline for empty slots), in viewport coordinates. */
+  const activate = (i: number, slotEl: Element, barHeight: number) => {
+    const r = slotEl.getBoundingClientRect();
+    setActive(i);
+    setAnchor({ x: r.left + r.width / 2, y: r.bottom - barHeight });
+  };
 
   return (
     <div ref={wrapRef} className="relative">
@@ -83,9 +91,9 @@ export function ColumnChart({
                 fill="transparent"
                 tabIndex={0}
                 aria-label={`${d.title}: ${formatValue(d.value)}`}
-                onPointerEnter={() => setActive(i)}
+                onPointerEnter={(e) => activate(i, e.currentTarget, h)}
                 onPointerLeave={() => setActive(null)}
-                onFocus={() => setActive(i)}
+                onFocus={(e) => activate(i, e.currentTarget, h)}
                 onBlur={() => setActive(null)}
               />
               {h > 0 ? (
@@ -105,14 +113,11 @@ export function ColumnChart({
           );
         })}
       </svg>
-      {activeDatum ? (
-        <div
-          className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 -translate-y-full rounded-md border border-line bg-raised px-2.5 py-1.5 text-xs shadow-[var(--shadow-pop)]"
-          style={{ left: pad.left + (active! + 0.5) * slot }}
-        >
+      {activeDatum && anchor ? (
+        <FloatingTip anchor={anchor} placement="above" className="whitespace-nowrap">
           <div className="font-semibold text-ink">{formatValue(activeDatum.value)}</div>
           <div className="text-ink-3">{activeDatum.title}</div>
-        </div>
+        </FloatingTip>
       ) : null}
     </div>
   );
