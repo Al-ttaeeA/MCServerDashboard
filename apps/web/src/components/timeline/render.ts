@@ -71,6 +71,10 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderState): void {
     }
   }
 
+  // Where the NOW pill will sit, so tick labels can avoid it.
+  const nowPillX = x(s.now);
+  const nowVisible = nowPillX >= 0 && nowPillX <= width;
+
   // Gridlines + axis labels.
   ctx.font = `500 11px ${s.fonts.mono}`;
   ctx.textBaseline = "middle";
@@ -83,7 +87,9 @@ export function render(ctx: CanvasRenderingContext2D, s: RenderState): void {
     ctx.lineTo(tx, height);
     ctx.stroke();
     // Skip labels that would be clipped at the right edge.
-    if (tx + 5 + ctx.measureText(tick.label).width > width - 2) continue;
+    const labelEnd = tx + 5 + ctx.measureText(tick.label).width;
+    if (labelEnd > width - 2) continue;
+    if (nowVisible && labelEnd > nowPillX - 22 && tx < nowPillX + 22) continue;
     ctx.fillStyle = tick.major ? C.axisTextMajor : C.axisText;
     ctx.fillText(tick.label, tx + 5, LAYOUT.axisHeight / 2);
   }

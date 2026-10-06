@@ -17,8 +17,8 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      // Replace with the id printed by `npx wrangler hyperdrive create …`.
-      "id": "REPLACE_WITH_HYPERDRIVE_ID",
+      // Hyperdrive config "smp-db" (not a secret; credentials live in Cloudflare).
+      "id": "8ff590797f7a44b1ab490f1ff12891af",
       // Used by `wrangler dev` only; real credentials live in the Hyperdrive config.
       "localConnectionString": "postgresql://postgres:postgres@localhost:5432/postgres"
     }
