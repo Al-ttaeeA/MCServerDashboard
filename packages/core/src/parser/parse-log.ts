@@ -93,6 +93,7 @@ export function parseLog(text: string, options: ParseOptions = {}): ParseResult 
     totalLines: lines.length,
     firstSecondOfDay: firstSecond,
     lastSecondOfDay: prevSecond,
+    lastDayOffset: dayOffset,
   };
 }
 

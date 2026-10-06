@@ -42,8 +42,11 @@ create index player_names_name_idx on smp.player_names (lower(name));
 -- imported twice under two names.
 create table smp.log_files (
   id               bigint generated always as identity primary key,
-  -- sha256 of `<log date>|<first line>` — stable across the rename/gzip.
+  -- `<log date>|<sha256 of first line>` — stable across the rename/gzip.
   fingerprint      text not null unique,
+  -- sha256 of the first line alone: lets a rotated .gz be matched to the
+  -- latest.log it used to be even if latest.log's date was inferred wrong.
+  first_line_hash  text not null,
   source_name      text not null,
   log_date         date not null,
   -- Sequence number from the rotated filename; null while still latest.log.

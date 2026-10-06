@@ -101,4 +101,6 @@ export interface ParseResult {
   /** Time of day of the last timestamped line (useful for dating latest.log). */
   lastSecondOfDay: number | null;
   firstSecondOfDay: number | null;
+  /** Day offset of the last timestamped line (pairs with lastSecondOfDay). */
+  lastDayOffset: number;
 }

@@ -30,8 +30,10 @@ export function createPostgresSql(connectionString: string, opts: PostgresOption
   return wrap(client, client);
 }
 
-type Client = postgres.Sql<Record<string, postgres.PostgresType>>;
-type TxClient = postgres.TransactionSql<Record<string, postgres.PostgresType>>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- custom type map varies
+type Client = postgres.Sql<any>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TxClient = postgres.TransactionSql<any>;
 
 function wrap(root: Client, conn: Client | TxClient): Sql {
   return {
