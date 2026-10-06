@@ -33,7 +33,9 @@ export function readIngestConfig(): IngestConfig {
   const statsTimeZone = process.env.STATS_TIMEZONE?.trim() || "America/New_York";
   assertValidTimeZone(serverTimeZone);
   assertValidTimeZone(statsTimeZone);
-  let databaseUrl = required("DATABASE_URL");
+  // Locally, default to the embedded dev database. In CI a missing secret must fail loudly
+  // instead of "succeeding" against a throwaway database.
+  let databaseUrl = process.env.CI ? required("DATABASE_URL") : process.env.DATABASE_URL?.trim() || "pglite:.data/dev";
   // Local PGlite paths are relative to the repo root, wherever the command runs from.
   if (databaseUrl.startsWith("pglite:") && databaseUrl !== "pglite:memory") {
     databaseUrl = "pglite:" + resolveFromRepoRoot(databaseUrl.slice("pglite:".length));
